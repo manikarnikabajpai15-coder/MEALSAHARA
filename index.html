@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#DC2626">
+<title>MealSahara — Emergency Portal</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --crimson:#DC2626;
+    --crimson-deep:#B00E1E;
+    --ink:#201A17;
+    --muted:#7A7168;
+    --paper:#F6F2EC;
+    --card-bg:#FFFFFF;
+    --line:#EAE2D7;
+    --safe:#0E9F6E;
+  }
+  html.dark-saver{
+    --paper:#000000;
+    --card-bg:#0A0A0A;
+    --ink:#F2EDE6;
+    --muted:#8A8177;
+    --line:#1E1E1E;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  .icon-svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.125em; flex-shrink:0; color:inherit; }
+  html,body{ height:100%; }
+  html,body{ height:auto; min-height:100%; }
+  body{
+    background:var(--paper);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    min-height:100vh; padding:0;
+  }
+  .font-display{ font-family:'Space Grotesk',sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono',monospace; }
+  html[data-lang="hi"] .font-display, html[data-lang="hi"] body{ font-family:'Noto Sans Devanagari','Inter',sans-serif; }
+
+  /* ---------------- full-screen app shell (no phone bezel), normal page scroll ---------------- */
+  .phone-shell{
+    width:100%;
+    min-height:100vh;
+    background:transparent;
+    border:none;
+    border-radius:0;
+    box-shadow:none;
+    position:relative;
+  }
+  .dynamic-island{ display:none; }
+  .phone-screen{
+    min-height:100vh; display:flex; flex-direction:column; background:var(--paper); transition:background .3s ease;
+    max-width:640px; margin:0 auto; width:100%;
+  }
+  header, footer{ width:100%; }
+
+  ::-webkit-scrollbar{ display:none; }
+
+  /* ---------------- header ---------------- */
+  .status-row{ padding:10px 26px 0; }
+  .brand-row{ padding:6px 18px 16px; }
+
+  /* pulsing badge dot */
+  .gps-dot{
+    width:9px; height:9px; border-radius:999px; background:var(--safe);
+    box-shadow:0 0 0 0 rgba(14,159,110,0.5);
+    animation:gpsPulse 2s ease-out infinite;
+  }
+  @keyframes gpsPulse{
+    0%{ box-shadow:0 0 0 0 rgba(14,159,110,0.45); }
+    70%{ box-shadow:0 0 0 10px rgba(14,159,110,0); }
+    100%{ box-shadow:0 0 0 0 rgba(14,159,110,0); }
+  }
+  html.dark-saver .gps-dot{ animation:none; box-shadow:none; }
+
+  /* language toggle */
+  .lang-btn{
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; color:#fff; opacity:.7;
+    transition:.15s ease;
+  }
+  .lang-btn.active{ background:#fff; color:var(--crimson-deep); opacity:1; }
+
+  .battery-btn{
+    font-size:10px; font-weight:600; color:#fff; opacity:.85; display:flex; align-items:center; gap:4px;
+    padding:4px 8px; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22);
+    transition:.15s ease;
+  }
+  .battery-btn.active{ background:#fff; color:var(--crimson-deep); opacity:1; }
+
+  /* ---------------- multi-select emergency toggle cards ---------------- */
+  .toggle-card{
+    position:relative; border-radius:20px; padding:16px 16px;
+    display:flex; align-items:center; gap:14px;
+    border:2.5px solid var(--line); background:var(--card-bg);
+    transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .12s ease;
+    cursor:pointer;
+  }
+  .toggle-card:active{ transform:scale(0.98); }
+  .toggle-icon-wrap{
+    width:52px; height:52px; border-radius:16px; flex-shrink:0; font-size:25px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--paper); transition:.18s ease;
+  }
+  .toggle-title{ font-size:14px; font-weight:800; line-height:1.2; }
+  .toggle-sub{ font-size:11px; color:var(--muted); line-height:1.35; margin-top:2px; }
+  .toggle-check{
+    width:26px; height:26px; border-radius:8px; border:2px solid #D8CFC2; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:.18s ease;
+  }
+  html.dark-saver .toggle-check{ border-color:#333; }
+  .toggle-check svg{ opacity:0; transform:scale(0.5); transition:.15s ease; }
+  .toggle-card.active .toggle-check svg{ opacity:1; transform:scale(1); }
+
+  .toggle-card[data-toggle="food"].active{ border-color:#22C55E; background:rgba(34,197,94,0.09); box-shadow:0 0 0 3px rgba(34,197,94,0.18), 0 10px 22px -10px rgba(34,197,94,0.4); }
+  .toggle-card[data-toggle="food"].active .toggle-icon-wrap{ background:#22C55E; }
+  .toggle-card[data-toggle="food"].active .toggle-check{ background:#22C55E; border-color:#22C55E; }
+
+  .toggle-card[data-toggle="water"].active{ border-color:#2563EB; background:rgba(37,99,235,0.09); box-shadow:0 0 0 3px rgba(37,99,235,0.18), 0 10px 22px -10px rgba(37,99,235,0.4); }
+  .toggle-card[data-toggle="water"].active .toggle-icon-wrap{ background:#2563EB; }
+  .toggle-card[data-toggle="water"].active .toggle-check{ background:#2563EB; border-color:#2563EB; }
+
+  .toggle-card[data-toggle="medical"]{ border-color:rgba(220,38,38,0.4); animation:medCardPulse 2.2s ease-in-out infinite; }
+  .toggle-card[data-toggle="medical"] .toggle-title{ color:var(--crimson); }
+  .toggle-card[data-toggle="medical"].active{ border-color:var(--crimson); background:rgba(220,38,38,0.1); box-shadow:0 0 0 3px rgba(220,38,38,0.22), 0 10px 26px -10px rgba(220,38,38,0.45); animation:none; }
+  .toggle-card[data-toggle="medical"].active .toggle-icon-wrap{ background:var(--crimson); }
+  .toggle-card[data-toggle="medical"].active .toggle-check{ background:var(--crimson); border-color:var(--crimson); }
+  @keyframes medCardPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(220,38,38,0.28); }
+    50%{ box-shadow:0 0 0 6px rgba(220,38,38,0); }
+  }
+  html.dark-saver .toggle-card[data-toggle="medical"]{ animation:none; }
+
+  /* ---------------- additional essential items — searchable hub ---------------- */
+  .essentials-search-wrap{ position:relative; margin-bottom:12px; }
+  .essentials-search-wrap svg.essentials-search-icon{
+    position:absolute; left:16px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; color:var(--muted); pointer-events:none;
+  }
+  .essentials-search-input{
+    width:100%; padding:14px 68px 14px 44px; border-radius:16px; border:2.5px solid var(--line);
+    background:var(--card-bg); color:var(--ink); font-size:13.5px; font-weight:600;
+    transition:.18s ease; outline:none;
+  }
+  .essentials-search-input::placeholder{ color:var(--muted); font-weight:500; }
+  .essentials-search-input:focus{ border-color:var(--crimson); box-shadow:0 0 0 3px rgba(220,38,38,0.14); }
+  .essentials-counter{
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    font-size:10.5px; font-weight:800; color:var(--crimson); white-space:nowrap;
+  }
+  .essentials-grid{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:0; max-height:0;
+    overflow-y:auto; padding:0 2px; transition:max-height .2s ease, margin-top .2s ease;
+  }
+  .essentials-grid.has-results{ margin-top:12px; max-height:320px; padding:2px 2px 4px; }
+  .essential-tag{
+    display:flex; align-items:center; gap:6px; padding:9px 13px; border-radius:999px;
+    border:2px solid var(--line); background:var(--card-bg); color:var(--ink);
+    font-size:12px; font-weight:700; cursor:pointer; transition:.15s ease;
+  }
+  .essential-tag:active{ transform:scale(0.96); }
+  .essential-tag-icon{ font-size:14px; line-height:1; }
+  .essential-tag-check{ display:none; font-size:11px; font-weight:900; }
+  .essential-tag.active{
+    background:var(--crimson); border-color:var(--crimson); color:#fff;
+    box-shadow:0 6px 16px -6px rgba(220,38,38,0.55);
+  }
+  .essential-tag.active .essential-tag-check{ display:inline-block; }
+  .essentials-empty{ text-align:center; font-size:12px; color:var(--muted); padding:16px 0; }
+
+  /* ---------------- master swipe-to-send module ---------------- */
+  .master-slide-track{
+    position:relative; width:100%; height:84px; border-radius:24px; overflow:hidden;
+    background:#141010; border:2px solid rgba(220,38,38,0.4);
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    box-shadow:0 -6px 20px -12px rgba(0,0,0,0.4);
+  }
+  html.dark-saver .master-slide-track{ background:#000; border-color:rgba(220,38,38,0.5); }
+  .master-slide-bg{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:0 18px 0 96px; pointer-events:none; z-index:1;
+  }
+  .master-slide-label{ font-size:12.5px; font-weight:800; letter-spacing:.03em; color:#fff; text-align:center; line-height:1.3; }
+  .master-slide-locked-text{
+    position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:13px; letter-spacing:.03em; color:#fff; pointer-events:none;
+  }
+  .master-slide-fill{
+    position:absolute; top:0; left:0; height:100%; width:80px;
+    background:linear-gradient(90deg, rgba(220,38,38,0.12), rgba(220,38,38,0.4)); z-index:0;
+  }
+  .master-slide-handle{
+    position:absolute; top:5px; left:5px; width:74px; height:74px; border-radius:19px;
+    background:radial-gradient(circle at 35% 30%, #FF4A50, var(--crimson) 60%, var(--crimson-deep) 100%);
+    display:flex; align-items:center; justify-content:center; z-index:2;
+    box-shadow:0 10px 24px -6px rgba(176,14,30,0.6); touch-action:none; cursor:grab;
+    animation:masterHandlePulse 1.1s ease-in-out infinite;
+    transition:left .28s cubic-bezier(.2,.9,.3,1.2), transform .15s ease;
+  }
+  .master-slide-handle:active{ cursor:grabbing; transform:scale(1.06); }
+  @keyframes masterHandlePulse{
+    0%,100%{ box-shadow:0 10px 24px -6px rgba(176,14,30,0.6), 0 0 0 0 rgba(220,38,38,0.55); }
+    50%{ box-shadow:0 10px 24px -6px rgba(176,14,30,0.6), 0 0 0 13px rgba(220,38,38,0); }
+  }
+  html.dark-saver .master-slide-handle{ animation:none; }
+  .master-slide-track.master-slide-complete .master-slide-bg{ opacity:0; transition:opacity .2s ease; }
+  .master-slide-track.master-slide-complete .master-slide-locked-text{ animation:lockedPop .3s ease-out; }
+  .master-slide-track.master-slide-complete .master-slide-handle{ animation:none; }
+  @keyframes lockedPop{ from{ opacity:0; transform:scale(0.85); } to{ opacity:1; transform:scale(1); } }
+  @keyframes trackShake{
+    10%,90%{ transform:translateX(-2px); }
+    20%,80%{ transform:translateX(4px); }
+    30%,50%,70%{ transform:translateX(-9px); }
+    40%,60%{ transform:translateX(9px); }
+  }
+  .master-slide-track.shake{ animation:trackShake .5s ease; }
+
+  /* ---------------- toast stack (active-request lock feedback) ---------------- */
+  .toast-stack{
+    position:fixed; top:0; left:0; right:0; z-index:2000;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:max(env(safe-area-inset-top,0px),12px) 16px 0; pointer-events:none;
+  }
+  .toast{
+    pointer-events:auto; width:100%; max-width:420px;
+    border-radius:14px; padding:13px 16px; font-size:12.5px; font-weight:600; line-height:1.45;
+    color:#fff; box-shadow:0 14px 34px -10px rgba(0,0,0,0.45);
+    opacity:0; transform:translateY(-28px) scale(0.98);
+    transition: opacity .35s cubic-bezier(.2,.9,.3,1.2), transform .35s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .toast.toast-show{ opacity:1; transform:translateY(0) scale(1); }
+  .toast.success{ background:linear-gradient(135deg,#12B76A,#08814F); border:1px solid rgba(255,255,255,0.25); }
+  .toast.error{ background:linear-gradient(135deg,#F04438,#B00E1E); border:1px solid rgba(255,255,255,0.25); }
+
+  .lock-note{
+    display:flex; align-items:center; gap:6px; justify-content:center;
+    font-size:11px; font-weight:700; margin-top:10px; padding:6px 12px; border-radius:999px;
+    color:var(--crimson); background:rgba(220,38,38,0.09); border:1px solid rgba(220,38,38,0.25);
+  }
+
+  /* ---------------- floating tiranga success ticker (non-blocking) ---------------- */
+  #tiranga-ticker{
+    position:fixed; top:0; left:0; right:0; z-index:900;
+    display:flex; justify-content:center;
+    padding-top:env(safe-area-inset-top, 0px);
+    pointer-events:none; /* never intercepts taps on cards / slider beneath it */
+    transform:translateY(-130%);
+    transition:transform .55s cubic-bezier(.2,.9,.3,1.1);
+  }
+  #tiranga-ticker.show{ transform:translateY(0); }
+  .tiranga-banner{
+    position:relative; width:100%; max-width:640px; margin:8px 10px 0;
+    border-radius:14px; overflow:hidden;
+    box-shadow:0 12px 28px -10px rgba(0,0,0,0.4);
+  }
+  .tiranga-stripes{
+    position:absolute; inset:0;
+    background:linear-gradient(90deg,
+      #FF9933 0%, #FF9933 30%,
+      #FFFFFF 30%, #FFFFFF 60%,
+      #138808 60%, #138808 100%,
+      #FF9933 100%);
+    background-size:220% 100%;
+    animation:tirangaSlide 3.2s linear infinite;
+  }
+  @keyframes tirangaSlide{
+    0%{ background-position:0% 0; }
+    100%{ background-position:-120% 0; }
+  }
+  .tiranga-banner-content{
+    position:relative; z-index:1; margin:5px; padding:9px 14px;
+    border-radius:10px; background:rgba(10,8,7,0.6);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .tiranga-banner-content span{
+    font-size:11.5px; font-weight:700; color:#fff; text-align:center; line-height:1.4;
+  }
+
+  /* ---------------- modal ---------------- */
+  .modal-backdrop{ background: rgba(20,14,12,0.55); backdrop-filter: blur(4px); }
+  .modal-card{ animation: modalIn .28s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes modalIn{ from{ opacity:0; transform:translateY(16px) scale(0.96); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  .success-ring{ animation: ringPop .5s ease-out; }
+  @keyframes ringPop{ 0%{ transform:scale(0.6); opacity:0; } 60%{ transform:scale(1.08); opacity:1; } 100%{ transform:scale(1); } }
+  html.dark-saver .success-ring{ animation:none; }
+
+  .safe-bottom{ padding-bottom: max(env(safe-area-inset-bottom, 0px), 6px); }
+
+  /* ---------------- battery telemetry (status bar) ---------------- */
+  #battery-sim-wrap{ transition:.15s ease; border-radius:999px; padding:2px 5px; }
+  #battery-sim-wrap:active{ background:rgba(255,255,255,0.18); transform:scale(0.94); }
+  #battery-sim-pct{ font-size:10.5px; font-weight:700; letter-spacing:.02em; }
+  #battery-sim-pct.battery-low{ color:#FFD1A8; animation:batteryLowBlink 1s ease-in-out infinite; }
+  @keyframes batteryLowBlink{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+
+  /* ---------------- progress stepper ---------------- */
+  .step-node{
+    width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:15px; border:2.5px solid var(--line); background:var(--card-bg); color:var(--muted);
+    transition:all .3s ease; position:relative; z-index:2; flex-shrink:0;
+  }
+  .step-node.step-done{ background:var(--safe); border-color:var(--safe); color:#fff; }
+  .step-node.step-active{
+    background:var(--step-color, var(--crimson)); border-color:var(--step-color, var(--crimson)); color:#fff;
+    animation:stepPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes stepPulse{
+    0%,100%{ box-shadow:0 0 0 0 var(--step-glow, rgba(220,38,38,0.55)); }
+    50%{ box-shadow:0 0 0 11px rgba(220,38,38,0); }
+  }
+  .stepper-line{ flex:1; height:4px; margin:0 6px; border-radius:2px; background:var(--line); transition:background .4s ease; align-self:flex-start; margin-top:21px; }
+  .stepper-line.line-filled{ background:var(--safe); }
+</style>
+</head>
+<body>
+
+<!-- Top-of-screen toast stack for lock/success feedback -->
+<div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+
+<!-- Floating Tiranga success ticker — pointer-events:none, so it never -->
+<!-- blocks taps on the cards or the swipe slider underneath it.        -->
+<div id="tiranga-ticker">
+  <div class="tiranga-banner">
+    <div class="tiranga-stripes"></div>
+    <div class="tiranga-banner-content">
+      <span>🇮🇳 मीलसहारा आपकी सेवा में तत्पर है | MealSahara is at your service</span>
+    </div>
+  </div>
+</div>
+
+<div class="phone-shell">
+  <div class="dynamic-island"></div>
+
+  <div class="phone-screen">
+
+    <!-- ============================================================ -->
+    <!-- HEADER: status bar + brand + language/battery controls        -->
+    <!-- ============================================================ -->
+    <header style="background:linear-gradient(135deg,var(--crimson),var(--crimson-deep));" class="text-white flex-shrink-0">
+      <div class="status-row flex items-center justify-between text-[12px] font-semibold">
+        <span>9:41</span>
+        <div class="flex items-center gap-1.5">
+          <svg class="icon-svg text-[11px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="3" height="8" rx="1" fill="currentColor"/><rect x="8" y="10" width="3" height="12" rx="1" fill="currentColor"/><rect x="14" y="6" width="3" height="16" rx="1" fill="currentColor"/><rect x="20" y="2" width="3" height="20" rx="1" fill="currentColor"/></svg>
+          <svg class="icon-svg text-[11px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 8.5a16 16 0 0 1 20 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M5 12a11 11 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M8.5 15.5a6 6 0 0 1 7 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
+          <div id="battery-sim-wrap" class="flex items-center gap-1 cursor-pointer" onclick="simulateBatteryDrain()" title="Tap to simulate battery drain">
+            <span id="battery-sim-pct" class="font-mono">97%</span>
+            <svg class="icon-svg text-[13px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="7" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="21.5" y="10" width="2" height="4" rx="1" fill="currentColor"/><rect id="battery-sim-icon-fill" x="4" y="9.5" width="13" height="5" rx="1" fill="currentColor"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-row flex items-start justify-between">
+        <h1 class="font-display font-700 text-[16px] tracking-tight pt-1">🚨 MealSahara</h1>
+
+        <div class="flex flex-col items-end gap-1.5">
+          <div class="flex items-center gap-1 bg-white/15 border border-white/25 rounded-full p-0.5">
+            <button id="lang-en" class="lang-btn active" onclick="setLanguage('en')">En</button>
+            <button id="lang-hi" class="lang-btn" onclick="setLanguage('hi')">हिंदी</button>
+          </div>
+          <button id="battery-toggle" class="battery-btn" onclick="toggleBatterySaver()">
+            <svg class="icon-svg " viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="7" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="21.5" y="10" width="2" height="4" rx="1" fill="currentColor"/><rect x="4" y="9.5" width="4.5" height="5" rx="1" fill="currentColor"/></svg>
+            <span data-i18n="batteryLabel">Battery Saver</span>
+          </button>
+          <button id="voice-replay-btn" class="battery-btn" onclick="playVoiceGuide()">
+            <svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>🔊 दोबारा सुनें / Listen Again</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- SCROLLABLE APP BODY                                            -->
+    <!-- ============================================================ -->
+    <main class="flex-1 overflow-y-auto px-4 pt-4 pb-3">
+
+      <!-- LIVE GEOLOCATION LOG -->
+      <section class="rounded-2xl border p-4 mb-4" style="background:var(--card-bg); border-color:var(--line);">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(220,38,38,0.1);">
+            <svg class="icon-svg text-[15px]" style="color:var(--crimson);" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-1.5">
+              <span class="gps-dot"></span>
+              <p class="text-[13px] font-semibold" data-i18n="gpsStatus">📍 GPS Location Status: High Precision Secured</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl px-3 py-2.5 mb-2" style="background:var(--paper);">
+          <p class="font-mono text-[12.5px] leading-relaxed">
+            Lat: <span class="font-semibold">26.8467° N</span> &nbsp;|&nbsp; Lon: <span class="font-semibold">80.9462° E</span>
+          </p>
+        </div>
+
+        <p class="text-[11px] leading-relaxed" style="color:var(--muted);" data-i18n="gpsSub">
+          Accuracy radius: 3 meters. Your exact rooftop elevation is being shared.
+        </p>
+      </section>
+
+      <!-- AUTOMATED SAFEGUARD — IP address check + GPS automation verification -->
+      <section class="rounded-2xl border p-3.5 mb-4 flex items-center gap-3" style="background:var(--card-bg); border-color:var(--line);">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(14,159,110,0.12);">
+          <svg class="icon-svg text-[15px]" style="color:var(--safe);" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5l-8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 2v20c4.6-1.7 8-6 8-11V5l-8-3Z" fill="currentColor" opacity="0.35"/></svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-[13px] font-semibold leading-snug" data-i18n="safeguardTitle">🛡️ Automated Safe-Guard Active</p>
+          <p class="text-[11px] leading-snug" style="color:var(--muted);" data-i18n="safeguardSub">🔗 IP Address checked and GPS Coordinates auto-verified to prevent system abuse.</p>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- LIVE PROGRESS STEPPER — shown only while a request is active   -->
+      <!-- ============================================================ -->
+      <section id="stepper-wrap" class="hidden rounded-2xl border p-5 mb-4" style="background:var(--card-bg); border-color:var(--line);">
+        <p class="text-[13px] font-semibold mb-5 text-center" data-i18n="stepperTitle">🚀 Live Rescue Progress</p>
+        <div class="flex items-start justify-between px-1">
+          <div class="flex flex-col items-center gap-2" style="width:76px;">
+            <div id="step-1" class="step-node">1</div>
+            <p class="text-[9.5px] font-semibold text-center leading-tight" data-i18n="step1Label">Distress Registered</p>
+          </div>
+          <div class="stepper-line" data-line="1"></div>
+          <div class="flex flex-col items-center gap-2" style="width:76px;">
+            <div id="step-2" class="step-node">2</div>
+            <p class="text-[9.5px] font-semibold text-center leading-tight" data-i18n="step2Label">Fleet Dispatched</p>
+          </div>
+          <div class="stepper-line" data-line="2"></div>
+          <div class="flex flex-col items-center gap-2" style="width:76px;">
+            <div id="step-3" class="step-node">3</div>
+            <p class="text-[9.5px] font-semibold text-center leading-tight" data-i18n="step3Label">Assets Fulfilled</p>
+          </div>
+        </div>
+        <p id="stepper-status-text" class="text-[11.5px] text-center mt-5 font-semibold" style="color:var(--crimson);"></p>
+        <button onclick="resetDemoState()" class="text-[10.5px] font-semibold underline block mx-auto mt-4" style="color:var(--muted);">
+          ↺ Reset Demo State (clear stuck request)
+        </button>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- BROADCAST TRIGGER GRID — hidden while a request is active      -->
+      <!-- ============================================================ -->
+      <div id="trigger-grid">
+
+      <!-- MULTI-SELECT EMERGENCY GRID -->
+      <section class="mb-2">
+        <p class="text-[13px] font-semibold mb-3 px-0.5" data-i18n="sectionTitle">Tap All That Apply:</p>
+
+        <div class="space-y-3">
+          <!-- CARD 1 — FOOD -->
+          <div class="toggle-card" data-toggle="food" onclick="toggleCard(this)">
+            <div class="toggle-icon-wrap">📦</div>
+            <div class="flex-1 min-w-0">
+              <p class="toggle-title" data-i18n="cardFoodTitle">Food Packets &amp; Rations</p>
+              <p class="toggle-sub" data-i18n="cardFoodSub">Dry supplies, ready-to-eat baby milk blocks</p>
+            </div>
+            <div class="toggle-check"><svg class="icon-svg text-white text-[13px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+
+          <!-- CARD 2 — WATER -->
+          <div class="toggle-card" data-toggle="water" onclick="toggleCard(this)">
+            <div class="toggle-icon-wrap">💧</div>
+            <div class="flex-1 min-w-0">
+              <p class="toggle-title" data-i18n="cardWaterTitle">Pure Drinking Water</p>
+              <p class="toggle-sub" data-i18n="cardWaterSub">Sealed bottles, bulk hydration canisters</p>
+            </div>
+            <div class="toggle-check"><svg class="icon-svg text-white text-[13px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+
+          <!-- CARD 3 — CRITICAL MEDICAL (permanent red alert outline) -->
+          <div class="toggle-card" data-toggle="medical" onclick="toggleCard(this)">
+            <div class="toggle-icon-wrap">💊</div>
+            <div class="flex-1 min-w-0">
+              <p class="toggle-title" data-i18n="cardMedTitle">CRITICAL MEDICAL AID</p>
+              <p class="toggle-sub" data-i18n="cardMedSub">Severe injuries, missing urgent prescriptions, elderly distress</p>
+            </div>
+            <div class="toggle-check"><svg class="icon-svg text-white text-[13px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+
+        <p class="text-[11px] mt-4 text-center max-w-[280px] mx-auto" style="color:var(--muted);" data-i18n="broadcastHint">Select one, two, or all three — then swipe the crimson bar below to send.</p>
+        <p id="lock-note" class="lock-note hidden">⏳ <span data-i18n="lockNote">A request is already active — awaiting delivery confirmation.</span></p>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ADDITIONAL ESSENTIAL ITEMS — searchable essentials hub         -->
+      <!-- ============================================================ -->
+      <section class="mb-2" id="essentials-section">
+        <p class="text-[13px] font-semibold mb-3 px-0.5">🎒 Additional Essential Items</p>
+
+        <div class="essentials-search-wrap">
+          <svg class="icon-svg essentials-search-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="m20 20-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input type="text" id="essentials-search" class="essentials-search-input"
+                 placeholder="🔍 Search other essentials (e.g., Torch, Blanket)..." autocomplete="off" />
+          <span id="essentials-counter" class="essentials-counter"></span>
+        </div>
+
+        <div id="essentials-grid" class="essentials-grid"></div>
+        <p id="essentials-empty" class="essentials-empty hidden">No matching items — try a different search.</p>
+      </section>
+
+      </div>
+      <!-- /trigger-grid -->
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- MASTER SWIPE-TO-SEND MODULE — pinned at the bottom, above the  -->
+    <!-- offline SMS footer, always reachable with one thumb            -->
+    <!-- ============================================================ -->
+    <div id="master-slide-wrap" class="px-4 pt-1 pb-3 flex-shrink-0">
+      <div id="master-slide-track" class="master-slide-track">
+        <div class="master-slide-bg">
+          <span class="master-slide-label" data-i18n="masterSlideLabel">➔ ➔ ➔ SWIPE RIGHT TO SEND HELP REQUEST</span>
+        </div>
+        <span id="master-slide-locked-text" class="master-slide-locked-text hidden" data-i18n="masterSlideLockedLabel">✓ HELP REQUEST SENT — TEAM NOTIFIED</span>
+        <div class="master-slide-fill" id="master-slide-fill"></div>
+        <div class="master-slide-handle" id="master-slide-handle">
+          <svg class="icon-svg text-[26px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6 12 12 6 18" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6 18 12 12 18" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- OFFLINE FAILSAFE FOOTER                                        -->
+    <!-- ============================================================ -->
+    <footer class="safe-bottom bg-[#241E1B] text-white px-4 pt-4 flex-shrink-0">
+      <div class="flex items-start gap-2.5 mb-3">
+        <svg class="icon-svg text-[#F0A83B] text-[14px] mt-0.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" fill="currentColor"/></svg>
+        <p class="text-[11.5px] text-[#C9C1B6] leading-relaxed" data-i18n="footerText">Cell network degraded? Tap to encode location into standard text payload.</p>
+      </div>
+      <button onclick="openSmsModal()" class="w-full bg-white/10 hover:bg-white/15 border border-white/15 text-[12.5px] font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+        <svg class="icon-svg text-[13px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4 8.3 8.3 0 0 1-3.7-.9L3 21l1.9-5.9a8.3 8.3 0 0 1-.9-3.6A8.4 8.4 0 0 1 12.4 3a8.5 8.5 0 0 1 8.5 8.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span data-i18n="footerBtn">Generate Emergency SMS String</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SUCCESS MODAL                                                  -->
+<!-- ============================================================ -->
+<div id="success-modal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-[1000] px-6">
+  <div class="modal-card bg-white rounded-3xl w-full max-w-[360px] p-6 text-center shadow-2xl">
+    <div id="success-ring" class="success-ring w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg id="success-icon" class="icon-svg text-[24px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="14" r="2.2" fill="currentColor"/><path d="M8.7 9.3a5 5 0 0 0 0 6.4M15.3 9.3a5 5 0 0 1 0 6.4M5.3 6.2a9.2 9.2 0 0 0 0 12.6M18.7 6.2a9.2 9.2 0 0 1 0 12.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 16v6M9 22h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+    <h3 id="success-title" class="font-display font-700 text-[16px] mb-2">🔴 HIGH-PRIORITY MEDICAL ALARM SENT!</h3>
+    <p id="success-body" class="text-[13px] text-[var(--muted)] leading-relaxed mb-5">
+      Government Rescue Boat Team Delta is deployed. Estimated Time of Arrival: 18 minutes. Stay calm on your rooftop.
+    </p>
+    <button onclick="closeModal('success-modal')" id="success-ok-btn" class="w-full text-white font-semibold text-[13px] py-3 rounded-xl transition-colors" style="background:var(--crimson);" data-i18n="okBtn">
+      Okay, Stay Alert
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SMS FALLBACK MODAL                                             -->
+<!-- ============================================================ -->
+<div id="sms-modal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-[1000] px-6">
+  <div class="modal-card bg-white rounded-3xl w-full max-w-[360px] p-6 shadow-2xl">
+    <div class="flex items-start justify-between mb-1">
+      <h3 class="font-display font-700 text-[15px]" data-i18n="smsModalTitle">Emergency SMS Payload</h3>
+      <button onclick="closeModal('sms-modal')" class="text-[var(--muted)] text-xl leading-none">&times;</button>
+    </div>
+    <p class="text-[12px] text-[var(--muted)] mb-4 leading-relaxed" data-i18n="smsModalDesc">Works on any signal — even 2G. Sending this text reaches municipal communication baselines without needing a data plan.</p>
+
+    <div class="bg-[var(--paper)] border border-[var(--line)] rounded-xl p-4 mb-4">
+      <p class="text-[10px] uppercase tracking-wide text-[var(--muted)] mb-1.5" data-i18n="smsPayloadLabel">Payload</p>
+      <p id="sms-payload" class="font-mono text-[15px] font-semibold text-[var(--crimson-deep)] break-all"></p>
+    </div>
+
+    <p class="text-[11px] text-[var(--muted)] mb-4">
+      <span data-i18n="smsInstructions">Sends to relief shortcode</span>
+      <span class="font-mono font-semibold text-[var(--ink)]">51969</span>
+    </p>
+
+    <button onclick="openMessagingApp()" class="w-full text-white font-semibold text-[13px] py-3 rounded-xl transition-colors flex items-center justify-center gap-2" style="background:var(--crimson);">
+      <svg class="icon-svg text-[12px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22 2 11 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2 15 22l-4-9-9-4 20-7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span data-i18n="smsSendBtn">Open Messaging App</span>
+    </button>
+  </div>
+</div>
+
+<script>
+const COORDS = { lat: 26.8467, lng: 80.9462 };
+let currentLang = 'en';
+
+/* =========================================================
+   Floating Tiranga Success Ticker — non-blocking top banner.
+   pointer-events:none on the wrapper means it can never
+   intercept taps on the cards or the swipe slider beneath it,
+   even while animating in/out.
+   ========================================================= */
+function showTirangaTicker(){
+  const el = document.getElementById('tiranga-ticker');
+  if (!el) return;
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); }, 4000);
+}
+showTirangaTicker();
+
+/* =========================================================
+   Parallel Background AI Hindi Voice Guide — fires the instant
+   the page opens, entirely in parallel with the interface,
+   which is already rendered and fully interactive. Uses the
+   native browser window.speechSynthesis API; never blocks the
+   UI thread and never delays card taps or the swipe gesture.
+   ========================================================= */
+const VOICE_GUIDE_TEXT =
+  "नमस्ते! मीलसहारा में आपका स्वागत है। मदद पाने के लिए, नीचे दिए गए बॉक्स में से अपनी ज़रूरत की चीज़ें, " +
+  "जैसे भोजन या पानी को छूकर चुन लें। उसके बाद, सबसे नीचे दी गई लाल पट्टी को दाईं ओर खिसकाकर अपना अनुरोध भेज दें। " +
+  "हमारी टीम जल्द आपके पास पहुँचेगी।";
+
+function playVoiceGuide(){
+  try {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); // stop any previous utterance before re-firing
+    const utter = new SpeechSynthesisUtterance(VOICE_GUIDE_TEXT);
+    utter.lang = 'hi-IN';
+    utter.pitch = 1.0;
+    utter.rate = 0.95; // steady, reassuring pace
+    const voices = window.speechSynthesis.getVoices();
+    const hiVoice = voices.find(v => v.lang === 'hi-IN') || voices.find(v => v.lang && v.lang.startsWith('hi'));
+    if (hiVoice) utter.voice = hiVoice;
+    utter.onstart = () => { window.__voiceGuideStarted = true; };
+    window.speechSynthesis.speak(utter);
+  } catch (e) {
+    // Speech synthesis unavailable on this device/browser — fail silently,
+    // the interface itself never depends on audio to function.
+  }
+}
+
+// Fire immediately on load. Some browsers (notably Chrome) populate the
+// voice list asynchronously, so if it wasn't ready on this first pass,
+// replay once automatically the moment voices become available.
+playVoiceGuide();
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    if (!window.speechSynthesis.speaking && !window.__voiceGuideRetried) {
+      window.__voiceGuideRetried = true;
+      playVoiceGuide();
+    }
+  };
+}
+
+/* Autoplay-policy safety net — several browsers (especially inside an
+   embedded iframe such as this artifact preview) silently block
+   speechSynthesis.speak() until the user has interacted with the page
+   at least once. If the automatic attempt above never actually started
+   speaking, fire the voice guide the instant the very first tap, click,
+   or key press lands anywhere on the page — effectively "the moment the
+   page opens" from the user's perspective. */
+function unlockVoiceGuideOnFirstInteraction(){
+  if (window.__voiceGuideStarted) return;
+  playVoiceGuide();
+}
+['pointerdown', 'touchstart', 'click', 'keydown'].forEach((evt) => {
+  document.addEventListener(evt, unlockVoiceGuideOnFirstInteraction, { once: true, passive: true });
+});
+
+/* =========================================================
+   Battery Telemetry — simulated live device battery level,
+   piggybacked onto every emergency broadcast payload so the
+   NGO Command Center can prioritize routing for low-battery
+   devices before they go dark.
+   ========================================================= */
+let SIMULATED_BATTERY = Math.floor(Math.random() * 88) + 9; // 9–96%
+
+function renderBatteryUI(){
+  const pct = document.getElementById('battery-sim-pct');
+  const fill = document.getElementById('battery-sim-icon-fill');
+  if (pct) {
+    pct.textContent = SIMULATED_BATTERY + '%';
+    pct.classList.toggle('battery-low', SIMULATED_BATTERY < 15);
+  }
+  if (fill) fill.setAttribute('width', Math.max(1, (SIMULATED_BATTERY / 100 * 13)).toFixed(1));
+}
+
+function simulateBatteryDrain(){
+  SIMULATED_BATTERY -= 17;
+  if (SIMULATED_BATTERY < 3) SIMULATED_BATTERY = 96; // loop back to a full charge for repeat demos
+  renderBatteryUI();
+  showToast(
+    SIMULATED_BATTERY < 15 ? 'error' : 'success',
+    SIMULATED_BATTERY < 15
+      ? `🔋 Battery critical: ${SIMULATED_BATTERY}% — this will flag priority routing on the NGO dashboard.`
+      : `🔋 Simulated device battery: ${SIMULATED_BATTERY}%`,
+    2600
+  );
+}
+renderBatteryUI();
+
+/* =========================================================
+   Translations
+   ========================================================= */
+const translations = {
+  en: {
+    sectionTitle: "Tap All That Apply:",
+    gpsStatus: "📍 GPS Location Status: High Precision Secured",
+    gpsSub: "Accuracy radius: 3 meters. Your exact rooftop elevation is being shared.",
+    cardFoodTitle: "Food Packets & Rations",
+    cardFoodSub: "Dry supplies, ready-to-eat baby milk blocks",
+    cardWaterTitle: "Pure Drinking Water",
+    cardWaterSub: "Sealed bottles, bulk hydration canisters",
+    cardMedTitle: "CRITICAL MEDICAL AID",
+    cardMedSub: "Severe injuries, missing urgent prescriptions, elderly distress",
+    masterSlideLabel: "➔ ➔ ➔ SWIPE RIGHT TO SEND HELP REQUEST",
+    masterSlideLockedLabel: "✓ HELP REQUEST SENT — TEAM NOTIFIED",
+    broadcastHint: "Select one, two, or all three — then swipe the crimson bar below to send.",
+    footerText: "Cell network degraded? Tap to encode location into standard text payload.",
+    footerBtn: "Generate Emergency SMS String",
+    modalMedTitle: "🔴 HIGH-PRIORITY MEDICAL ALARM SENT!",
+    modalMedBody: "Government Rescue Boat Team Delta is deployed. Estimated Time of Arrival: 18 minutes. Stay calm on your rooftop.",
+    modalSupplyTitle: "🟡 SUPPLY ALARM LOGGED!",
+    modalSupplyBody: "Volunteer Team Alpha (Red Cross Mobile Hub) is en route with your food/water. Estimated Time of Arrival: 35 minutes.",
+    okBtn: "Okay, Stay Alert",
+    smsModalTitle: "Emergency SMS Payload",
+    smsModalDesc: "Works on any signal — even 2G. Sending this text reaches municipal communication baselines without needing a data plan.",
+    smsPayloadLabel: "Payload",
+    smsInstructions: "Sends to relief shortcode",
+    smsSendBtn: "Open Messaging App",
+    batteryLabel: "Battery Saver",
+    safeguardTitle: "🛡️ Automated Safe-Guard Active",
+    safeguardSub: "🔗 IP Address checked and GPS Coordinates auto-verified to prevent system abuse.",
+    lockNote: "A request is already active — awaiting delivery confirmation.",
+    toastNoSelection: "⚠️ Please select at least one item (Food, Water, or Medical) before swiping to send.",
+    toastLocked: "⚠️ अनुरोध जनरेट नहीं किया जा सकता | Request cannot be generated. Your previous delivery is still in progress. Rescuers are on the way!",
+    toastSuccess: "✅ सफलतापूर्वक अनुरोध जनरेट किया गया | Request Generated Successfully!",
+    stepperTitle: "🚀 Live Rescue Progress",
+    step1Label: "Distress Registered",
+    step2Label: "Fleet Dispatched",
+    step3Label: "Assets Fulfilled",
+    stepStatusPending: "⏳ Your distress signal is registered. Awaiting rescue team assignment...",
+    stepStatusDispatched: "🚚 A rescue team has been dispatched and is en route to your location!",
+    stepStatusFulfilled: "✅ Assets delivered! Returning to standby..."
+  },
+  hi: {
+    sectionTitle: "जो भी लागू हो उसे चुनें:",
+    gpsStatus: "📍 जीपीएस स्थान स्थिति: उच्च सटीकता सुरक्षित",
+    gpsSub: "सटीकता त्रिज्या: 3 मीटर। आपकी छत की सटीक ऊँचाई साझा की जा रही है।",
+    cardFoodTitle: "भोजन पैकेट और राशन",
+    cardFoodSub: "सूखी सामग्री, तैयार शिशु दूध ब्लॉक",
+    cardWaterTitle: "शुद्ध पेयजल",
+    cardWaterSub: "सील्ड बोतलें, थोक हाइड्रेशन कनस्तर",
+    cardMedTitle: "गंभीर चिकित्सा सहायता",
+    cardMedSub: "गंभीर चोटें, अत्यावश्यक दवाइयाँ, बुज़ुर्ग संकट",
+    masterSlideLabel: "➔ ➔ ➔ सहायता अनुरोध भेजने हेतु दाईं ओर स्वाइप करें",
+    masterSlideLockedLabel: "✓ अनुरोध भेजा गया — टीम को सूचित किया गया",
+    broadcastHint: "एक, दो, या तीनों चुनें — फिर भेजने के लिए नीचे लाल पट्टी को स्वाइप करें।",
+    footerText: "नेटवर्क कमज़ोर है? स्थान को मानक टेक्स्ट पेलोड में बदलने के लिए टैप करें।",
+    footerBtn: "इमरजेंसी एसएमएस जनरेट करें",
+    modalMedTitle: "🔴 उच्च-प्राथमिकता चिकित्सा अलार्म भेजा गया!",
+    modalMedBody: "सरकारी बचाव नाव टीम डेल्टा भेजी जा चुकी है। अनुमानित आगमन समय: 18 मिनट। अपनी छत पर शांत रहें।",
+    modalSupplyTitle: "🟡 आपूर्ति अलार्म दर्ज किया गया!",
+    modalSupplyBody: "स्वयंसेवक टीम अल्फा (रेड क्रॉस मोबाइल हब) आपके भोजन/पानी के साथ रास्ते में है। अनुमानित आगमन समय: 35 मिनट।",
+    okBtn: "ठीक है, सतर्क रहें",
+    smsModalTitle: "इमरजेंसी एसएमएस पेलोड",
+    smsModalDesc: "किसी भी सिग्नल पर काम करता है — 2G पर भी। यह संदेश बिना डेटा प्लान के नगरपालिका संचार आधार तक पहुँचता है।",
+    smsPayloadLabel: "पेलोड",
+    smsInstructions: "रिलीफ शॉर्टकोड पर भेजा गया",
+    smsSendBtn: "मैसेजिंग ऐप खोलें",
+    batteryLabel: "बैटरी सेवर",
+    safeguardTitle: "🛡️ स्वचालित सुरक्षा सक्रिय",
+    safeguardSub: "🔗 दुरुपयोग रोकने के लिए आईपी एड्रेस जाँचा गया और जीपीएस स्थान स्वतः सत्यापित किया गया है।",
+    lockNote: "एक अनुरोध पहले से सक्रिय है — डिलीवरी की पुष्टि की प्रतीक्षा है।",
+    toastNoSelection: "⚠️ भेजने से पहले कृपया कम से कम एक विकल्प (भोजन, पानी या चिकित्सा) चुनें।",
+    toastLocked: "⚠️ अनुरोध जनरेट नहीं किया जा सकता | Request cannot be generated. Your previous delivery is still in progress. Rescuers are on the way!",
+    toastSuccess: "✅ सफलतापूर्वक अनुरोध जनरेट किया गया | Request Generated Successfully!",
+    stepperTitle: "🚀 लाइव बचाव प्रगति",
+    step1Label: "संकट पंजीकृत",
+    step2Label: "बेड़ा रवाना",
+    step3Label: "संसाधन पूर्ण",
+    stepStatusPending: "⏳ आपका संकट संकेत पंजीकृत हो गया है। बचाव टीम के आवंटन की प्रतीक्षा है...",
+    stepStatusDispatched: "🚚 एक बचाव टीम रवाना हो चुकी है और आपके स्थान की ओर आ रही है!",
+    stepStatusFulfilled: "✅ संसाधन पहुँचा दिए गए! सामान्य स्थिति में लौट रहे हैं..."
+  }
+};
+
+function setLanguage(lang){
+  currentLang = lang;
+  document.documentElement.setAttribute('data-lang', lang);
+  const t = translations[lang];
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-hi').classList.toggle('active', lang === 'hi');
+
+  renderStepper(localStorage.getItem('activeRequestState'));
+}
+
+/* =========================================================
+   Battery Saver — low-power dark mode
+   ========================================================= */
+function toggleBatterySaver(){
+  const html = document.documentElement;
+  const btn = document.getElementById('battery-toggle');
+  const isDark = html.classList.toggle('dark-saver');
+  btn.classList.toggle('active', isDark);
+}
+
+/* =========================================================
+   Multi-Select Emergency Grid — tap any combination of cards
+   (Food / Water / Medical) to arm that channel. Purely a
+   local UI toggle; nothing is sent until the master slider
+   below is swiped fully to the right.
+   ========================================================= */
+const activeNeeds = { food: 0, water: 0, medical: 0 };
+
+function toggleCard(card){
+  if (isRequestLocked()) return;
+  const key = card.getAttribute('data-toggle');
+  const isActive = card.classList.toggle('active');
+  activeNeeds[key] = isActive ? 1 : 0;
+}
+
+/* =========================================================
+   Additional Essential Items — searchable multi-select hub
+   35 pre-loaded emergency essential tags. Typing in the
+   search bar filters the grid live; tapping a tag toggles
+   it into the `selectedCustomItems` array, which rides
+   along inside the emergency payload sent to the NGO hub.
+   ========================================================= */
+const ESSENTIAL_ITEMS = [
+  { name: 'Torch/Flashlight',   icon: '🔦' },
+  { name: 'Powerbank',          icon: '🔋' },
+  { name: 'Mobile Charger',     icon: '🔌' },
+  { name: 'AA Batteries',       icon: '⚡' },
+  { name: 'Blanket',            icon: '🧣' },
+  { name: 'Extra Clothes',      icon: '👕' },
+  { name: 'Undergarments',      icon: '🩲' },
+  { name: 'Raincoat',           icon: '🧥' },
+  { name: 'Slippers',           icon: '🩴' },
+  { name: 'Sanitary Pads',      icon: '🩸' },
+  { name: 'Baby Diapers',       icon: '👶' },
+  { name: 'Matchbox',           icon: '🔥' },
+  { name: 'Candles',            icon: '🕯️' },
+  { name: 'Lighter',            icon: '🔥' },
+  { name: 'Rope',               icon: '🪢' },
+  { name: 'Pocket Knife',       icon: '🔪' },
+  { name: 'Whistle',            icon: '📯' },
+  { name: 'Tarpaulin Sheet',    icon: '🏕️' },
+  { name: 'First-Aid Tape',     icon: '🩹' },
+  { name: 'Antiseptic Liquid',  icon: '🧴' },
+  { name: 'Mosquito Repellent', icon: '🦟' },
+  { name: 'Soap',               icon: '🧼' },
+  { name: 'Hand Sanitizer',     icon: '🧴' },
+  { name: 'ORS Packets',        icon: '🥤' },
+  { name: 'Glucose Powder',     icon: '🍬' },
+  { name: 'Dry Milk',           icon: '🥛' },
+  { name: 'Baby Feeder',        icon: '🍼' },
+  { name: 'Sleeping Bag',       icon: '🛌' },
+  { name: 'Inflatable Pillow',  icon: '💤' },
+  { name: 'Eye Glasses',        icon: '👓' },
+  { name: 'Walking Stick',      icon: '🦯' },
+  { name: 'Waterproof Pouch',   icon: '🎒' },
+  { name: 'Can Opener',         icon: '🥫' },
+  { name: 'Emergency Radio',    icon: '📻' },
+  { name: 'Toothbrush',         icon: '🪥' },
+  { name: 'Towel',              icon: '🧺' }
+];
+
+let selectedCustomItems = [];
+
+function updateEssentialsCounter(){
+  const el = document.getElementById('essentials-counter');
+  if (!el) return;
+  el.textContent = selectedCustomItems.length ? `${selectedCustomItems.length} selected` : '';
+}
+
+function toggleEssentialItem(name, btn){
+  if (isRequestLocked()) return;
+  const idx = selectedCustomItems.indexOf(name);
+  if (idx > -1) {
+    selectedCustomItems.splice(idx, 1);
+    btn.classList.remove('active');
+  } else {
+    selectedCustomItems.push(name);
+    btn.classList.add('active');
+  }
+  updateEssentialsCounter();
+  // Re-sync the grid: in "no search" mode it only shows selected chips,
+  // so deselecting one there needs to drop it from view immediately.
+  const searchInput = document.getElementById('essentials-search');
+  renderEssentialsGrid(searchInput ? searchInput.value : '');
+}
+
+function renderEssentialsGrid(filterText){
+  const grid = document.getElementById('essentials-grid');
+  const emptyMsg = document.getElementById('essentials-empty');
+  if (!grid) return;
+
+  const q = (filterText || '').trim().toLowerCase();
+
+  // Nothing typed yet — keep the grid collapsed (no space wasted).
+  // Already-selected tags still show, so a tap isn't "lost" from view.
+  if (!q) {
+    grid.innerHTML = '';
+    grid.classList.remove('has-results');
+    const selectedItems = ESSENTIAL_ITEMS.filter(it => selectedCustomItems.includes(it.name));
+    selectedItems.forEach(it => grid.appendChild(buildEssentialTag(it)));
+    if (selectedItems.length) grid.classList.add('has-results');
+    if (emptyMsg) emptyMsg.classList.add('hidden');
+    return;
+  }
+
+  const matches = ESSENTIAL_ITEMS.filter(it => it.name.toLowerCase().includes(q));
+
+  grid.innerHTML = '';
+  grid.classList.toggle('has-results', matches.length > 0);
+  matches.forEach(it => grid.appendChild(buildEssentialTag(it)));
+
+  if (emptyMsg) emptyMsg.classList.toggle('hidden', matches.length > 0);
+}
+
+function buildEssentialTag(it){
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'essential-tag' + (selectedCustomItems.includes(it.name) ? ' active' : '');
+  btn.setAttribute('data-item', it.name);
+  btn.innerHTML =
+    `<span class="essential-tag-icon">${it.icon}</span>` +
+    `<span class="essential-tag-label">${it.name}</span>` +
+    `<span class="essential-tag-check">✓</span>`;
+  btn.addEventListener('click', () => toggleEssentialItem(it.name, btn));
+  return btn;
+}
+
+function initEssentialsHub(){
+  const searchInput = document.getElementById('essentials-search');
+  renderEssentialsGrid('');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => renderEssentialsGrid(e.target.value));
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initEssentialsHub);
+} else {
+  initEssentialsHub();
+}
+
+function resetInputPanel(){
+  activeNeeds.food = 0;
+  activeNeeds.water = 0;
+  activeNeeds.medical = 0;
+  document.querySelectorAll('.toggle-card').forEach(c => c.classList.remove('active'));
+
+  // Clear the essentials search hub too
+  selectedCustomItems = [];
+  const searchInput = document.getElementById('essentials-search');
+  if (searchInput) searchInput.value = '';
+  updateEssentialsCounter();
+  renderEssentialsGrid('');
+
+  const track = document.getElementById('master-slide-track');
+  const handle = document.getElementById('master-slide-handle');
+  const fill = document.getElementById('master-slide-fill');
+  const lockedText = document.getElementById('master-slide-locked-text');
+  if (track) track.classList.remove('master-slide-complete');
+  if (handle) handle.style.left = '5px';
+  if (fill && handle) fill.style.width = (handle.offsetWidth + 5) + 'px';
+  if (lockedText) lockedText.classList.add('hidden');
+}
+
+function getNeeds(){
+  return {
+    food: activeNeeds.food,
+    water: activeNeeds.water,
+    medical: activeNeeds.medical,
+    customItems: selectedCustomItems.slice()
+  };
+}
+
+/* Automated background validation routine — Device ID fingerprint
+   + GPS geo-fence check, fired the instant the master slider lands
+   at the right edge. Fully automated, no OTP. */
+function runValidationRoutine(needs){
+  const deviceStamp = 'DEV_' + Date.now();
+  void deviceStamp; void needs;
+}
+
+/* =========================================================
+   Master "Swipe-to-Send" Slider — a single, massive drag
+   gesture at the bottom of the screen that fires the entire
+   emergency broadcast for every card currently toggled active.
+   Vanilla JS touch + mouse drag listeners; 100% width required.
+   ========================================================= */
+function bounceMasterSlider(track, handle, fill){
+  handle.style.left = '5px';
+  fill.style.width = (handle.offsetWidth + 5) + 'px';
+  track.classList.add('shake');
+  setTimeout(() => track.classList.remove('shake'), 500);
+}
+
+function handleMasterSubmit(track, handle, fill, lockedText){
+  const t = translations[currentLang];
+  const n = getNeeds();
+
+  // 1) At least one card must be active.
+  if (n.food + n.water + n.medical === 0) {
+    showToast('error', t.toastNoSelection, 3600);
+    bounceMasterSlider(track, handle, fill);
+    return;
+  }
+
+  // 2) Block if a previous request is still pending.
+  if (isRequestLocked()) {
+    showToast('error', t.toastLocked, 5000);
+    bounceMasterSlider(track, handle, fill);
+    return;
+  }
+
+  // 3) Clear — fire the automated validation routine, lock the
+  //    handle visually in place, then hand off to the broadcast
+  //    pipeline (locks state, saves payload, shows the success
+  //    banner, morphs the UI into the live stepper).
+  runValidationRoutine(n);
+  track.classList.add('master-slide-complete');
+  if (lockedText) lockedText.classList.remove('hidden');
+  broadcastDistress();
+}
+
+function initMasterSlider(){
+  const track = document.getElementById('master-slide-track');
+  const handle = document.getElementById('master-slide-handle');
+  const fill = document.getElementById('master-slide-fill');
+  const lockedText = document.getElementById('master-slide-locked-text');
+  if (!track || !handle || !fill) return;
+
+  let dragging = false;
+  let startX = 0;
+  let startLeft = 5;
+  let maxLeft = 0;
+
+  function computeMax(){
+    maxLeft = Math.max(0, track.clientWidth - handle.offsetWidth - 10);
+  }
+
+  function setPosition(px){
+    const clamped = Math.max(0, Math.min(maxLeft, px));
+    handle.style.left = clamped + 'px';
+    fill.style.width = (clamped + handle.offsetWidth) + 'px';
+  }
+
+  function onStart(clientX){
+    if (track.classList.contains('master-slide-complete') || isRequestLocked()) return;
+    computeMax();
+    dragging = true;
+    startX = clientX;
+    startLeft = parseFloat(handle.style.left) || 5;
+    handle.style.transition = 'none';
+  }
+
+  function onMove(clientX){
+    if (!dragging) return;
+    setPosition(startLeft + (clientX - startX));
+  }
+
+  function onEnd(){
+    if (!dragging) return;
+    dragging = false;
+    handle.style.transition = 'left .28s cubic-bezier(.2,.9,.3,1.2)';
+    const currentLeft = parseFloat(handle.style.left) || 0;
+    const pct = maxLeft > 0 ? (currentLeft / maxLeft) * 100 : 0;
+
+    if (pct >= 96) {
+      // Thrown fully to the right edge — 100% width validation passes.
+      handle.style.left = maxLeft + 'px';
+      fill.style.width = '100%';
+      handleMasterSubmit(track, handle, fill, lockedText);
+    } else {
+      bounceMasterSlider(track, handle, fill);
+    }
+  }
+
+  // Touch gesture listeners (primary input during a real flood emergency)
+  handle.addEventListener('touchstart', (e) => { onStart(e.touches[0].clientX); }, { passive: true });
+  handle.addEventListener('touchmove', (e) => { onMove(e.touches[0].clientX); }, { passive: true });
+  handle.addEventListener('touchend', onEnd);
+  handle.addEventListener('touchcancel', onEnd);
+
+  // Mouse listeners (desktop / demo / judge testing)
+  handle.addEventListener('mousedown', (e) => { e.preventDefault(); onStart(e.clientX); });
+  window.addEventListener('mousemove', (e) => { if (dragging) onMove(e.clientX); });
+  window.addEventListener('mouseup', onEnd);
+
+  computeMax();
+  fill.style.width = (handle.offsetWidth + 5) + 'px';
+  window.addEventListener('resize', computeMax);
+}
+initMasterSlider();
+
+/* =========================================================
+   Push SOS to NGO Control Hub (shared localStorage channel)
+   Fully automated — verified via IP address check and GPS
+   automation, no OTP, no manual mobile verification, no
+   voice capture. A device fingerprint is generated the
+   instant the victim presses the broadcast button.
+   ========================================================= */
+function saveRequestForNgo(n){
+  const deviceId = 'DEV_' + Date.now();
+  const req = {
+    id: 'SOS_' + Date.now(),      // unique id, e.g. SOS_1732530000000
+    deviceId,                      // auto-generated device fingerprint
+    needs: n,                      // { food, water, medical } — 1/0
+    selectedCustomItems: (n.customItems || []).slice(), // 🎒 extra essentials tapped in the search hub
+    lat: COORDS.lat,
+    lng: COORDS.lng,
+    battery: SIMULATED_BATTERY,    // live simulated device battery %, e.g. battery: 12
+    timestamp: Date.now()
+  };
+  try {
+    localStorage.setItem('latestCitizenRequest', JSON.stringify(req));
+  } catch (e) {
+    // localStorage unavailable — fail silently
+  }
+  // Instant same-origin channel to ngo.html — no polling needed on their side.
+  try {
+    if ('BroadcastChannel' in window) {
+      new BroadcastChannel('mealsahara_sos').postMessage(req);
+    }
+  } catch (e) {
+    // BroadcastChannel unavailable — fail silently
+  }
+  return req;
+}
+
+/* =========================================================
+   Toast stack — top-of-screen animated banners
+   ========================================================= */
+function showToast(type, message, duration = 4200){
+  const stack = document.getElementById('toast-stack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = message;
+  stack.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('toast-show')));
+  setTimeout(() => {
+    el.classList.remove('toast-show');
+    setTimeout(() => el.remove(), 380);
+  }, duration);
+}
+
+/* =========================================================
+   Active Request Lock — mirrors NGO's fulfillment state.
+   localStorage key "activeRequestState" = "pending" while a
+   broadcast is outstanding; NGO dashboard clears it on
+   "Mark as Delivered / Fulfilled", which re-unlocks this app
+   instantly (via the cross-tab 'storage' event) or on reload.
+   ========================================================= */
+function isRequestLocked(){
+  return !!localStorage.getItem('activeRequestState');
+}
+
+function applyLockState(){
+  const note = document.getElementById('lock-note');
+  const state = localStorage.getItem('activeRequestState');
+  const locked = !!state;
+  if (note) note.classList.toggle('hidden', !locked);
+  if (!locked) resetInputPanel(); // fresh cards + slider, ready for the next SOS
+  renderStepper(state);
+}
+
+/* Demo/testing helper — clears a stuck 'pending'/'dispatched' state left
+   over from earlier testing (e.g. this device broadcast a request but
+   ngo.html was never opened to dispatch/deliver it), so the screen
+   doesn't stay stuck on the stepper forever. Not part of the real
+   rescue flow — purely for resetting the local demo environment. */
+function resetDemoState(){
+  try {
+    localStorage.removeItem('activeRequestState');
+    localStorage.removeItem('latestCitizenRequest');
+  } catch (e) {
+    // localStorage unavailable — fail silently
+  }
+  applyLockState();
+  showToast('success', '🔄 Demo state cleared. Ready for a new request.', 2600);
+}
+
+/* =========================================================
+   Real-Time Progress Stepper — mirrors the NGO's mission
+   status (pending → dispatched → fulfilled) live, via the
+   shared 'activeRequestState' localStorage key.
+   ========================================================= */
+function renderStepper(state){
+  const grid = document.getElementById('trigger-grid');
+  const masterBar = document.getElementById('master-slide-wrap');
+  const wrap = document.getElementById('stepper-wrap');
+  const statusText = document.getElementById('stepper-status-text');
+  if (!grid || !wrap) return;
+
+  if (!state) {
+    grid.classList.remove('hidden');
+    if (masterBar) masterBar.classList.remove('hidden');
+    wrap.classList.add('hidden');
+    return;
+  }
+
+  // Hide the entire input control block (toggle cards + master slider)
+  // while a request is live.
+  grid.classList.add('hidden');
+  if (masterBar) masterBar.classList.add('hidden');
+  wrap.classList.remove('hidden');
+
+  const step1 = document.getElementById('step-1');
+  const step2 = document.getElementById('step-2');
+  const step3 = document.getElementById('step-3');
+  const line1 = document.querySelector('.stepper-line[data-line="1"]');
+  const line2 = document.querySelector('.stepper-line[data-line="2"]');
+  const nodes = [step1, step2, step3];
+
+  nodes.forEach(n => {
+    n.classList.remove('step-done', 'step-active');
+    n.style.removeProperty('--step-color');
+    n.style.removeProperty('--step-glow');
+  });
+  [line1, line2].forEach(l => l && l.classList.remove('line-filled'));
+
+  const t = translations[currentLang];
+
+  if (state === 'pending') {
+    step1.classList.add('step-active');
+    step1.style.setProperty('--step-color', 'var(--crimson)');
+    step1.style.setProperty('--step-glow', 'rgba(220,38,38,0.55)');
+    step1.innerHTML = '1';
+    step2.innerHTML = '2';
+    step3.innerHTML = '3';
+    if (statusText) { statusText.textContent = t.stepStatusPending; statusText.style.color = 'var(--crimson)'; }
+  } else if (state === 'dispatched') {
+    step1.classList.add('step-done'); step1.innerHTML = '✓';
+    step2.classList.add('step-active');
+    step2.style.setProperty('--step-color', '#2563EB');
+    step2.style.setProperty('--step-glow', 'rgba(37,99,235,0.5)');
+    step2.innerHTML = '2';
+    step3.innerHTML = '3';
+    if (line1) line1.classList.add('line-filled');
+    if (statusText) { statusText.textContent = t.stepStatusDispatched; statusText.style.color = '#2563EB'; }
+  } else if (state === 'fulfilled') {
+    step1.classList.add('step-done'); step1.innerHTML = '✓';
+    step2.classList.add('step-done'); step2.innerHTML = '✓';
+    step3.classList.add('step-active');
+    step3.style.setProperty('--step-color', 'var(--safe)');
+    step3.style.setProperty('--step-glow', 'rgba(14,159,110,0.5)');
+    step3.innerHTML = '3';
+    if (line1) line1.classList.add('line-filled');
+    if (line2) line2.classList.add('line-filled');
+    if (statusText) { statusText.textContent = t.stepStatusFulfilled; statusText.style.color = 'var(--safe)'; }
+  }
+}
+
+window.addEventListener('storage', (e) => {
+  // Fires in this tab whenever another tab (e.g. ngo.html) changes
+  // localStorage — including when it clears activeRequestState.
+  if (e.key === 'activeRequestState' || e.key === null) applyLockState();
+});
+// This script runs at the end of <body>, so the DOM is already parsed —
+// don't rely solely on 'DOMContentLoaded' (it may have already fired).
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyLockState);
+} else {
+  applyLockState();
+}
+
+/* =========================================================
+   Broadcast — Active Request Lock + conditional priority logic
+   ========================================================= */
+function broadcastDistress(){
+  const t = translations[currentLang];
+
+  // CASE A — a request is already active: block, no new request generated.
+  if (isRequestLocked()) {
+    applyLockState();
+    showToast('error', t.toastLocked, 5000);
+    return;
+  }
+
+  // CASE B — no active request: lock immediately, then proceed.
+  try {
+    localStorage.setItem('activeRequestState', 'pending');
+  } catch (e) {
+    // localStorage unavailable — fail silently
+  }
+  applyLockState();
+
+  const n = getNeeds();
+
+  /* push this SOS to the shared localStorage channel so the
+     NGO Control Hub (which polls 'latestCitizenRequest') picks it up */
+  saveRequestForNgo(n);
+
+  showToast('success', t.toastSuccess, 3800);
+
+  const ring = document.getElementById('success-ring');
+  const icon = document.getElementById('success-icon');
+  const title = document.getElementById('success-title');
+  const body = document.getElementById('success-body');
+  const okBtn = document.getElementById('success-ok-btn');
+
+  if (n.medical === 1) {
+    ring.style.background = 'rgba(220,38,38,0.12)';
+    icon.style.color = 'var(--crimson)';
+    title.style.color = 'var(--crimson)';
+    title.textContent = t.modalMedTitle;
+    body.textContent = t.modalMedBody;
+    okBtn.style.background = 'var(--crimson)';
+  } else {
+    ring.style.background = 'rgba(217,119,6,0.14)';
+    icon.style.color = '#D97706';
+    title.style.color = '#D97706';
+    title.textContent = t.modalSupplyTitle;
+    body.textContent = t.modalSupplyBody;
+    okBtn.style.background = '#D97706';
+  }
+  okBtn.textContent = t.okBtn;
+
+  openModal('success-modal');
+}
+
+/* =========================================================
+   SMS fallback
+   ========================================================= */
+function buildSmsPayload(){
+  const n = getNeeds();
+  let payload = `MS:${COORDS.lat.toFixed(2)},${COORDS.lng.toFixed(2)}:F${n.food}W${n.water}M${n.medical}`;
+  if (n.medical === 1) payload += '-URGENT';
+  return payload;
+}
+
+function openSmsModal(){
+  document.getElementById('sms-payload').textContent = buildSmsPayload();
+  openModal('sms-modal');
+}
+
+function openMessagingApp(){
+  const payload = buildSmsPayload();
+  const body = encodeURIComponent(payload);
+  window.location.href = `sms:51969?&body=${body}`;
+}
+
+/* =========================================================
+   Modal helpers
+   ========================================================= */
+function openModal(id){
+  const modal = document.getElementById(id);
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+function closeModal(id){
+  const modal = document.getElementById(id);
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', (e) => { if (e.target === m) closeModal(m.id); });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MealSahara — NGO Command Center</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+Devanagari:wght@600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --void:#0A0E14;
+    --panel:#0E141C;
+    --card:#151D29;
+    --card-hi:#1B2432;
+    --line:#232D3D;
+    --red:#FF4438;
+    --amber:#FFC33B;
+    --green:#22C55E;
+    --teal:#2FD9B8;
+    --blue:#4C8DFF;
+    --text:#EAF0F8;
+    --muted:#8496AD;
+    --muted-2:#5B6B84;
+  }
+  html.light-theme{
+    --void:#F1F4F9;
+    --panel:#FFFFFF;
+    --card:#FFFFFF;
+    --card-hi:#EEF2F8;
+    --line:#DDE4ED;
+    --text:#111827;
+    --muted:#5B6472;
+    --muted-2:#8A93A3;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background:var(--void); color:var(--text); font-family:'Inter',sans-serif;
+    overflow:hidden; transition:background .3s ease, color .3s ease;
+  }
+  .font-display{ font-family:'Space Grotesk',sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono',monospace; }
+  .font-hi{ font-family:'Noto Sans Devanagari','Inter',sans-serif; }
+
+  ::-webkit-scrollbar{ width:7px; height:7px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:#2A3548; border-radius:4px; }
+  html.light-theme ::-webkit-scrollbar-thumb{ background:#C7D0DD; }
+
+  .hidden{ display:none !important; }
+
+  /* ============================================================
+     AUTH GATEWAY
+     ============================================================ */
+  #authOverlay{
+    background:
+      radial-gradient(circle at 20% 15%, rgba(76,141,255,0.14), transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(47,217,184,0.1), transparent 45%),
+      rgba(5,8,12,0.92);
+    backdrop-filter:blur(6px);
+  }
+  html.light-theme #authOverlay{
+    background:
+      radial-gradient(circle at 20% 15%, rgba(76,141,255,0.1), transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(47,217,184,0.08), transparent 45%),
+      rgba(241,244,249,0.94);
+  }
+  .auth-card{
+    background:var(--card); border:1px solid var(--line); border-radius:24px;
+    padding:34px 30px; width:100%; max-width:400px;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,0.5);
+    animation:authIn .35s cubic-bezier(.2,.9,.3,1.15);
+  }
+  @keyframes authIn{ from{ opacity:0; transform:translateY(18px) scale(0.97); } to{ opacity:1; transform:translateY(0) scale(1); } }
+
+  .tab-switcher{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:4px; }
+  .tab-btn{ flex:1; text-align:center; padding:9px 0; border-radius:11px; font-size:12.5px; font-weight:700; color:var(--muted); transition:.18s ease; cursor:pointer; }
+  .tab-btn.active{ background:var(--blue); color:#fff; box-shadow:0 6px 16px -4px rgba(76,141,255,0.5); }
+
+  .auth-input{
+    width:100%; background:var(--panel); border:1.5px solid var(--line); border-radius:12px;
+    color:var(--text); font-size:13px; padding:12px 14px; outline:none; transition:.15s ease;
+  }
+  .auth-input::placeholder{ color:var(--muted-2); }
+  .auth-input:focus{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(76,141,255,0.18); }
+  .auth-label{ font-size:11px; font-weight:600; color:var(--muted); margin-bottom:6px; display:block; }
+
+  .btn-primary{
+    background:linear-gradient(180deg,var(--blue),#3A6FDB); color:#fff; font-weight:700; font-size:13px;
+    padding:13px 0; border-radius:13px; transition:.15s ease; box-shadow:0 12px 26px -8px rgba(76,141,255,0.55);
+  }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-primary:active{ transform:scale(0.98); }
+
+  /* ============================================================
+     SIDEBAR
+     ============================================================ */
+  .sidebar{ background:linear-gradient(180deg,#0B0F16,#08090D); border-right:1px solid #17202C; transition:background .3s ease; }
+  html.light-theme .sidebar{ background:linear-gradient(180deg,#111827,#0B1220); border-right-color:#1E293B; }
+  .nav-icon-link{
+    position:relative; width:44px; height:44px; border-radius:13px;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    color:#8496AD; cursor:pointer; transition:.18s ease;
+  }
+  .nav-icon-link:hover{ background:#161E2A; color:#EAF0F8; }
+  .nav-icon-link.active{ background:linear-gradient(180deg,#1E3A52,#16283A); color:var(--blue); }
+  .nav-icon-link.active::before{
+    content:''; position:absolute; left:-13px; top:50%; transform:translateY(-50%);
+    width:3px; height:20px; border-radius:3px; background:var(--blue);
+  }
+  .nav-icon-link .tooltip{
+    position:absolute; left:56px; top:50%; transform:translateY(-50%) translateX(-6px);
+    background:#1B2432; border:1px solid #2A3548; color:#EAF0F8;
+    font-size:11.5px; font-weight:600; padding:7px 11px; border-radius:9px; white-space:nowrap;
+    opacity:0; pointer-events:none; transition:.15s ease; box-shadow:0 10px 24px -8px rgba(0,0,0,0.6); z-index:200;
+  }
+  .nav-icon-link:hover .tooltip{ opacity:1; transform:translateY(-50%) translateX(0); }
+
+  .brand-icon{ width:42px; height:42px; border-radius:13px; background:#1B2432; border:1px solid #2A3548; display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .brand-caption{ font-size:7.5px; font-weight:700; color:#8496AD; letter-spacing:.14em; text-align:center; text-transform:uppercase; line-height:1.3; margin-top:6px; }
+
+  /* ============================================================
+     TOP BANNER
+     ============================================================ */
+  .top-banner{ background:rgba(14,20,28,0.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); flex-shrink:0; transition:background .3s ease; }
+  html.light-theme .top-banner{ background:rgba(255,255,255,0.85); }
+  .live-dot{ width:7px; height:7px; border-radius:999px; background:var(--green); box-shadow:0 0 0 0 rgba(34,197,94,0.5); animation:dotPulse 1.8s ease-out infinite; }
+  @keyframes dotPulse{ 0%{ box-shadow:0 0 0 0 rgba(34,197,94,0.45); } 70%{ box-shadow:0 0 0 8px rgba(34,197,94,0); } 100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); } }
+
+  /* ============================================================
+     TAGS / STATUS / CARDS
+     ============================================================ */
+  .tag{ font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:999px; letter-spacing:.01em; }
+  .tag-food{ background:rgba(255,195,59,0.14); color:#C77E00; border:1px solid rgba(255,195,59,0.3); }
+  .tag-water{ background:rgba(76,141,255,0.14); color:var(--blue); border:1px solid rgba(76,141,255,0.25); }
+  .tag-medical{ background:rgba(255,68,56,0.14); color:var(--red); border:1px solid rgba(255,68,56,0.25); }
+  .tag-custom{ background:rgba(167,139,250,0.14); color:#A78BFA; border:1px solid rgba(167,139,250,0.3); }
+  html.light-theme .tag-custom{ color:#7C3AED; }
+  html.light-theme .tag-food{ color:#B45309; }
+
+  .status-pill{ font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+  .status-pill.pending{ background:rgba(255,164,59,0.14); color:#C77E00; border:1px solid rgba(255,164,59,0.3); }
+  .status-pill.deployed{ background:rgba(34,197,94,0.14); color:#16803D; border:1px solid rgba(34,197,94,0.32); }
+  html.light-theme .status-pill.pending{ color:#B45309; }
+  html.light-theme .status-pill.deployed{ color:#15803D; }
+
+  .sos-card{ background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:18px; transition:opacity .35s ease, border-color .25s ease; animation:cardIn .35s ease; box-shadow:0 1px 0 rgba(255,255,255,0.02); }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(-8px); } to{ opacity:1; transform:translateY(0); } }
+  .sos-card.critical{ border-color:rgba(255,68,56,0.4); }
+  .sos-card.standard{ border-color:rgba(255,195,59,0.35); }
+  .sos-card.deployed{ border-color:rgba(34,197,94,0.35); }
+  .sos-card .flash-dot{ width:7px; height:7px; border-radius:999px; background:var(--red); box-shadow:0 0 0 0 rgba(255,68,56,0.6); animation:flashDot 1s ease-out infinite; flex-shrink:0; }
+  @keyframes flashDot{ 0%{ box-shadow:0 0 0 0 rgba(255,68,56,0.55); } 70%{ box-shadow:0 0 0 7px rgba(255,68,56,0); } 100%{ box-shadow:0 0 0 0 rgba(255,68,56,0); } }
+
+  .map-icon-btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; background:rgba(76,141,255,0.12); border:1px solid rgba(76,141,255,0.3); color:var(--blue); font-size:12px; font-weight:600; padding:9px 12px; border-radius:11px; width:100%; transition:.15s ease; cursor:pointer; }
+  .map-icon-btn:hover{ background:rgba(76,141,255,0.22); }
+  .map-icon-btn:disabled{ opacity:0.4; cursor:not-allowed; background:rgba(120,120,120,0.08); color:var(--muted-2); border-color:var(--line); }
+
+  /* ============================================================
+     RADAR MARKER PIN (popup map)
+     ============================================================ */
+  .radar-pin{ position:relative; width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
+  .radar-pin .ring{ position:absolute; inset:0; border-radius:50%; opacity:0; }
+  .radar-pin.critical .ring{ background:rgba(255,68,56,0.45); animation:radarPulse 1.6s ease-out infinite; }
+  .radar-pin.standard .ring{ background:rgba(255,195,59,0.4); animation:radarPulse 2.6s ease-out infinite; }
+  @keyframes radarPulse{ 0%{ transform:scale(0.4); opacity:0.75; } 100%{ transform:scale(1.9); opacity:0; } }
+  .radar-pin .core{ position:relative; width:30px; height:30px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,0.9); box-shadow:0 3px 12px rgba(0,0,0,0.55); }
+  .radar-pin .core i{ transform:rotate(45deg); font-size:12px; color:#fff; }
+  .radar-pin.critical .core{ background:var(--red); }
+  .radar-pin.standard .core{ background:var(--amber); }
+  .radar-pin.standard .core i{ color:#241500; }
+  .radar-pin.fulfilled .core{ background:var(--green); }
+  .radar-pin.fulfilled .ring{ display:none; }
+
+  /* ============================================================
+     POPUP MAP + AUTOMATED VERIFICATION TELEMETRY MODAL
+     ============================================================ */
+  .modal-backdrop{ background:rgba(5,8,12,0.75); backdrop-filter:blur(4px); }
+  html.light-theme .modal-backdrop{ background:rgba(241,244,249,0.8); }
+  .modal-card{ animation:modalIn .25s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes modalIn{ from{ opacity:0; transform:translateY(14px) scale(0.96); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  #popupMap{ width:100%; height:220px; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
+  .leaflet-tile-pane{ filter:saturate(0.75) brightness(0.62) contrast(1.12) hue-rotate(-4deg); }
+  html.light-theme .leaflet-tile-pane{ filter:saturate(0.9) brightness(1) contrast(1.02); }
+  .leaflet-popup-content-wrapper{ background:#151D29; color:#EAF0F8; border:1px solid #2A3548; border-radius:10px; }
+  .leaflet-popup-content{ font-family:'Inter',sans-serif; font-size:12.5px; margin:9px 11px; }
+  .leaflet-popup-tip{ background:#151D29; }
+  .leaflet-container a.leaflet-popup-close-button{ color:#8496AD; }
+  .leaflet-control-zoom a{ background:rgba(21,29,41,0.92) !important; color:#EAF0F8 !important; border:1px solid #2A3548 !important; }
+  .mission-chip{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 13px; }
+  .telemetry-row{ transition:.15s ease; }
+  .telemetry-row.playable:hover{ filter:brightness(1.25); }
+
+  /* ============================================================
+     PROFILE / TEAM CARDS
+     ============================================================ */
+  .avatar-circle{ border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+  .info-card{ background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; }
+  .feedback-item{ background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
+  .member-row{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px 15px; display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; }
+  .member-row > .flex-1{ flex:1 1 150px; min-width:0; }
+  .member-row .role-badge{ display:inline-block; margin-top:4px; line-height:1.4; }
+  .member-row a{ white-space:nowrap; }
+  .role-badge{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:rgba(76,141,255,0.14); color:var(--blue); border:1px solid rgba(76,141,255,0.25); }
+
+  /* ============================================================
+     SETTINGS VIEW
+     ============================================================ */
+  .theme-option{ flex:1; border:1.5px solid var(--line); border-radius:14px; padding:16px; cursor:pointer; transition:.18s ease; text-align:center; background:var(--panel); }
+  .theme-option.active{ border-color:var(--blue); background:rgba(76,141,255,0.08); box-shadow:0 0 0 3px rgba(76,141,255,0.14); }
+  .lang-select{ width:100%; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; color:var(--text); font-size:13px; padding:12px 14px; outline:none; }
+
+  /* ============================================================
+     HELP VIEW
+     ============================================================ */
+  .step-row{ display:flex; gap:14px; align-items:flex-start; }
+  .step-num{ width:30px; height:30px; border-radius:9px; background:var(--panel); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; color:var(--blue); flex-shrink:0; }
+  .manual-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
+    background:linear-gradient(135deg,var(--blue),#2FD9B8); color:#06121A; font-weight:800; font-size:13.5px;
+    padding:17px 0; border-radius:16px; transition:.18s ease; box-shadow:0 16px 34px -10px rgba(76,141,255,0.5);
+  }
+  .manual-btn{ text-align:center; line-height:1.4; overflow-wrap:break-word; }
+  @media (max-width:520px){ .manual-btn{ font-size:11.5px !important; padding:14px 12px !important; } }
+  .manual-btn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+
+  /* ============================================================
+     TOAST NOTIFICATIONS
+     ============================================================ */
+  .toast-container{ position:fixed; top:18px; right:18px; z-index:1500; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
+  .toast-card{ background:var(--card); border:1px solid var(--line); border-left:4px solid var(--green); border-radius:12px; padding:13px 16px; min-width:270px; max-width:330px; box-shadow:0 16px 38px -10px rgba(0,0,0,0.5); animation:toastIn .3s cubic-bezier(.2,.9,.3,1.2); }
+  .toast-card.info{ border-left-color:var(--blue); }
+  .toast-card.leaving{ animation:toastOut .25s ease forwards; }
+  @keyframes toastIn{ from{ opacity:0; transform:translateX(46px) scale(0.96); } to{ opacity:1; transform:translateX(0) scale(1); } }
+  @keyframes toastOut{ to{ opacity:0; transform:translateX(46px) scale(0.96); } }
+
+  /* ============================================================
+     BATTERY TELEMETRY BADGE (sidebar SOS cards)
+     ============================================================ */
+  .battery-chip{ font-size:10.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--muted-2); white-space:nowrap; }
+  .battery-chip.low{ color:var(--red); }
+  .battery-critical-badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; line-height:1.3;
+    padding:5px 10px; border-radius:999px; background:rgba(255,68,56,0.16); color:var(--red);
+    border:1px solid rgba(255,68,56,0.45); animation:batteryFlash 0.9s ease-in-out infinite;
+  }
+  @keyframes batteryFlash{
+    0%,100%{ opacity:1; box-shadow:0 0 0 0 rgba(255,68,56,0.5); }
+    50%{ opacity:.5; box-shadow:0 0 0 6px rgba(255,68,56,0); }
+  }
+
+  /* ============================================================
+     NGO ANALYTICS LOGISTICS SLIDERS (base camp asset reserves)
+     ============================================================ */
+  .asset-slider-card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 15px; }
+  .asset-track{ width:100%; height:10px; border-radius:999px; background:var(--void); border:1px solid var(--line); overflow:hidden; }
+  html.light-theme .asset-track{ background:#E7ECF3; }
+  .asset-fill{ height:100%; border-radius:999px; }
+  .asset-fill.asset-low{ animation:assetLowPulse 1s ease-in-out infinite; }
+  @keyframes assetLowPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+
+  /* ============================================================
+     RESPONSIVE — phones & small tablets
+     ============================================================ */
+  html, body{ overflow-x:hidden; }
+  /* 100vh is taller than the visible area on mobile browsers (URL bar), which
+     hid the bottom of the last card — use dynamic viewport height instead. */
+  #dashboardShell{ height:100vh; height:100dvh; }
+  main{ padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px)) !important; }
+  .sos-card, .mission-chip{ min-width:0; overflow-wrap:anywhere; }
+  .info-card, .feedback-item, .member-row{ min-width:0; overflow-wrap:break-word; word-break:normal; }
+  .tag{ max-width:100%; overflow-wrap:anywhere; }
+  .leaflet-container{ max-width:100%; }
+  @media (max-width: 900px){
+    .sidebar{ width:64px !important; min-width:64px !important; max-width:64px !important; }
+    .nav-icon-link{ width:40px; height:40px; }
+    .nav-icon-link .tooltip{ display:none; } /* hover tooltips are useless on touch */
+  }
+  @media (max-width: 520px){
+    .member-row a{ flex:0 0 100%; padding-left:52px; margin-top:-2px; } /* phone drops under name, aligned with text */
+    .theme-option{ padding:12px 8px; }
+  }
+  @media (max-width: 640px){
+    .auth-card{ padding:26px 20px; }
+    .info-card{ padding:16px; }
+    #popupMap{ height:180px; }
+    .toast-container{ left:10px; right:10px; top:10px; align-items:stretch; }
+    .toast-card{ min-width:0; max-width:none; width:100%; }
+    .modal-card{ padding:18px !important; }
+  }
+  @media (max-width: 420px){
+    .sidebar{ width:56px !important; min-width:56px !important; max-width:56px !important; }
+    .nav-icon-link{ width:36px; height:36px; font-size:13px; }
+    .brand-icon{ width:34px !important; height:34px !important; font-size:15px !important; }
+    .brand-caption{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     1. 'NAMASTE' WELCOME GATEWAY
+     ============================================================ -->
+<div id="authOverlay" class="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+  <div class="auth-card">
+    <div class="text-center mb-6">
+      <div class="brand-icon mx-auto mb-3" style="width:52px;height:52px;font-size:22px;">🛰️</div>
+      <h1 class="font-hi font-700 text-[18px] leading-snug">नमस्ते 🙏 Welcome to MealSahara Command</h1>
+      <p class="text-[11.5px] text-[var(--muted)] mt-1.5">Secure gateway for verified NGO &amp; volunteer operators</p>
+    </div>
+
+    <div class="tab-switcher flex mb-6">
+      <div id="tab-login" class="tab-btn active" onclick="switchAuthTab('login')">Login</div>
+      <div id="tab-signup" class="tab-btn" onclick="switchAuthTab('signup')">Sign Up</div>
+    </div>
+
+    <div id="panel-login">
+      <label class="auth-label">Master Access Key</label>
+      <input id="login-password" type="password" inputmode="numeric" maxlength="4" placeholder="Enter secure team key" class="auth-input mb-2">
+      <p id="login-error" class="hidden text-[11.5px] font-semibold mb-3" style="color:var(--red);">❌ Invalid Team Key</p>
+      <button onclick="handleLogin()" class="btn-primary w-full mt-2">Log In</button>
+      <p class="text-[10.5px] text-[var(--muted-2)] text-center mt-4">Demo hint: access key is <span class="font-mono text-[var(--muted)]">9999</span></p>
+    </div>
+
+    <div id="panel-signup" class="hidden">
+      <label class="auth-label">Full Name</label>
+      <input id="signup-name" type="text" placeholder="e.g. Aditi Sharma" class="auth-input mb-3">
+      <label class="auth-label">Active Phone Number</label>
+      <input id="signup-phone" type="tel" placeholder="e.g. +91 98765 43210" class="auth-input mb-3">
+      <label class="auth-label">Primary Base Location</label>
+      <input id="signup-location" type="text" placeholder="e.g. Kanpur Relief Sector 4" class="auth-input mb-2">
+      <p id="signup-error" class="hidden text-[11.5px] font-semibold mb-3" style="color:var(--red);">❌ Please fill in all fields</p>
+      <button onclick="handleSignup()" class="btn-primary w-full mt-2">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DASHBOARD SHELL
+     ============================================================ -->
+<div id="dashboardShell" class="hidden flex h-screen w-screen">
+
+  <!-- ---------- 2. VERTICAL ICON SIDEBAR (8%) ---------- -->
+  <nav class="sidebar w-[8%] min-w-[76px] max-w-[92px] h-full flex flex-col items-center py-6 justify-between flex-shrink-0">
+    <div class="flex flex-col items-center w-full px-1.5">
+      <div class="brand-icon">🛰️</div>
+      <p class="brand-caption">M.S. COMMAND</p>
+    </div>
+
+    <div class="flex flex-col items-center gap-4">
+      <div class="nav-icon-link active" data-view="stream" onclick="handleNavClick(this)">
+        <i class="fa-solid fa-tower-broadcast"></i>
+        <span class="tooltip">🚨 Live Stream</span>
+      </div>
+      <div class="nav-icon-link" data-view="profile" onclick="handleNavClick(this)">
+        <i class="fa-solid fa-user"></i>
+        <span class="tooltip">👤 Your Profile</span>
+      </div>
+      <div class="nav-icon-link" data-view="team" onclick="handleNavClick(this)">
+        <i class="fa-solid fa-users"></i>
+        <span class="tooltip">👥 Your Team</span>
+      </div>
+      <div class="nav-icon-link" data-view="settings" onclick="handleNavClick(this)">
+        <i class="fa-solid fa-gear"></i>
+        <span class="tooltip">⚙️ App Settings</span>
+      </div>
+      <div class="nav-icon-link" data-view="help" onclick="handleNavClick(this)">
+        <i class="fa-solid fa-circle-question"></i>
+        <span class="tooltip">❓ Help / Support</span>
+      </div>
+    </div>
+
+    <div class="w-8 h-8 rounded-full bg-[#1B2432] border border-[#2A3548] flex items-center justify-center text-[11px] font-bold text-[var(--muted)]">🧑‍✈️</div>
+  </nav>
+
+  <!-- ---------- 3. DYNAMIC CONTENT WORKSPACE (92%) ---------- -->
+  <div class="flex-1 h-full flex flex-col overflow-hidden">
+    <header class="top-banner px-4 sm:px-5 lg:px-7 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div class="min-w-0">
+        <h1 id="banner-title" class="font-display font-700 text-[14.5px] sm:text-[16.5px] leading-snug">🚨 Live Flood Crisis Dispatch Streams</h1>
+        <p id="banner-subtitle" class="text-[10.5px] sm:text-[11px] text-[var(--muted)] font-mono mt-0.5 leading-snug">Central operator feed — sector-wide citizen broadcast layer</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] sm:text-[12px] font-mono text-[var(--muted)]">
+        <span id="signal-badge" class="text-[10.5px] sm:text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-[rgba(255,68,56,0.14)] text-[var(--red)] border border-[rgba(255,68,56,0.3)]">2 Active Signals</span>
+        <span class="w-px h-3.5 bg-[var(--line)] hidden sm:inline-block"></span>
+        <span class="flex items-center gap-1.5"><span class="live-dot"></span>Sync: Active</span>
+        <span class="w-px h-3.5 bg-[var(--line)] hidden sm:inline-block"></span>
+        <span id="live-clock">--:--:--</span>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-7">
+
+      <!-- ===== A. CENTRAL DISASTER LOG STREAM ===== -->
+      <section id="view-stream" class="view-panel">
+
+        <!-- ============================================================
+             NGO ANALYTICS LOGISTICS SLIDERS — live base camp asset reserves
+             ============================================================ -->
+        <div id="logistics-panel" class="mb-6 rounded-2xl border p-4 sm:p-5" style="background:var(--card); border-color:var(--line);">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-display font-700 text-[14px] flex items-center gap-2">📦 Base Camp Asset Reserves</h3>
+            <span class="text-[10.5px] font-mono text-[var(--muted-2)]">Live logistics telemetry</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="asset-slider-card">
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[12.5px] font-semibold">📦 Rations</span>
+                <span id="asset-rations-pct" class="font-mono text-[12px] font-bold" style="color:var(--amber);">100%</span>
+              </div>
+              <div class="asset-track"><div id="asset-rations-fill" class="asset-fill transition-all duration-700 ease-out" style="width:100%; background:var(--amber);"></div></div>
+            </div>
+            <div class="asset-slider-card">
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[12.5px] font-semibold">💊 Medical Units</span>
+                <span id="asset-medical-pct" class="font-mono text-[12px] font-bold" style="color:var(--red);">100%</span>
+              </div>
+              <div class="asset-track"><div id="asset-medical-fill" class="asset-fill transition-all duration-700 ease-out" style="width:100%; background:var(--red);"></div></div>
+            </div>
+            <div class="asset-slider-card">
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[12.5px] font-semibold">🚤 Evacuation Rafts</span>
+                <span id="asset-rafts-pct" class="font-mono text-[12px] font-bold" style="color:var(--blue);">100%</span>
+              </div>
+              <div class="asset-track"><div id="asset-rafts-fill" class="asset-fill transition-all duration-700 ease-out" style="width:100%; background:var(--blue);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="sosLogContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- ===== B. YOUR PROFILE VIEW ===== -->
+      <section id="view-profile" class="view-panel hidden max-w-2xl">
+        <div class="info-card">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-5">
+            <div class="avatar-circle w-16 h-16 text-[20px] flex-shrink-0" style="background:linear-gradient(135deg,var(--blue),#2FD9B8); color:#06121A;">RS</div>
+            <div class="min-w-0">
+              <h2 class="font-display font-700 text-[18px]">Rahul Sharma</h2>
+              <p class="text-[12.5px] text-[var(--muted)]">National Disaster Response Force — NDRF</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+            <div class="feedback-item">
+              <p class="text-[10.5px] text-[var(--muted-2)] mb-1 uppercase tracking-wide">Active Deployment</p>
+              <p class="text-[13px] font-semibold">Zone B, Sector 4 Flood Plain</p>
+            </div>
+            <div class="feedback-item">
+              <p class="text-[10.5px] text-[var(--muted-2)] mb-1 uppercase tracking-wide">Performance Rating</p>
+              <p class="text-[13px] font-semibold">⭐ 4.9 / 5.0 <span class="text-[var(--muted)] font-normal">· 42 missions</span></p>
+            </div>
+          </div>
+          <h3 class="text-[12.5px] font-semibold text-[var(--muted)] mb-2.5 uppercase tracking-wide">Recent Feedbacks</h3>
+          <div class="flex flex-col gap-2.5 max-h-[280px] overflow-y-auto pr-1">
+            <div class="feedback-item"><p class="text-[12.5px]">"Excellent coordination during the midnight evacuation run."</p><p class="text-[10.5px] text-[var(--muted-2)] font-mono mt-1.5">— Team Bravo Lead, 2 days ago</p></div>
+            <div class="feedback-item"><p class="text-[12.5px]">"Calm under pressure, guided two boat teams to the correct sector in minutes."</p><p class="text-[10.5px] text-[var(--muted-2)] font-mono mt-1.5">— Sector Coordinator, 5 days ago</p></div>
+            <div class="feedback-item"><p class="text-[12.5px]">"Trusts the automated verification telemetry completely — zero unauthorized dispatches on his watch."</p><p class="text-[10.5px] text-[var(--muted-2)] font-mono mt-1.5">— NDRF Command, 1 week ago</p></div>
+            <div class="feedback-item"><p class="text-[12.5px]">"Reached the critical medical case 6 minutes ahead of ETA."</p><p class="text-[10.5px] text-[var(--muted-2)] font-mono mt-1.5">— Field Medic, 9 days ago</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== C. YOUR TEAM VIEW ===== -->
+      <section id="view-team" class="view-panel hidden max-w-2xl">
+        <div class="info-card">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+            <div class="min-w-0">
+              <h2 class="font-display font-700 text-[18px]">Team Delta — Swift Water Rescue</h2>
+              <p class="text-[12.5px] text-[var(--muted)] mt-1">Red Cross Disaster Cell Alliance</p>
+            </div>
+            <div class="status-pill deployed">⭐ 4.8 / 5.0</div>
+          </div>
+          <h3 class="text-[12.5px] font-semibold text-[var(--muted)] mb-2.5 uppercase tracking-wide">Active Team Members on Field</h3>
+          <div class="flex flex-col gap-2.5">
+            <div class="member-row">
+              <div class="avatar-circle w-10 h-10 text-[12.5px]" style="background:rgba(76,141,255,0.16); color:var(--blue);">AK</div>
+              <div class="flex-1"><p class="text-[13px] font-semibold leading-snug">Amit Kumar</p><span class="role-badge">Team Lead</span></div>
+              <a href="tel:+919876543210" class="text-[12px] font-mono text-[var(--muted)] flex items-center gap-1.5"><i class="fa-solid fa-phone text-[var(--teal)]"></i>+91 98765 43210</a>
+            </div>
+            <div class="member-row">
+              <div class="avatar-circle w-10 h-10 text-[12.5px]" style="background:rgba(255,68,56,0.14); color:var(--red);">PS</div>
+              <div class="flex-1"><p class="text-[13px] font-semibold leading-snug">Priya Singh</p><span class="role-badge">Medical Specialist</span></div>
+              <a href="tel:+919876543211" class="text-[12px] font-mono text-[var(--muted)] flex items-center gap-1.5"><i class="fa-solid fa-phone text-[var(--teal)]"></i>+91 98765 43211</a>
+            </div>
+            <div class="member-row">
+              <div class="avatar-circle w-10 h-10 text-[12.5px]" style="background:rgba(255,195,59,0.16); color:#C77E00;">VR</div>
+              <div class="flex-1"><p class="text-[13px] font-semibold leading-snug">Vikram Rathore</p><span class="role-badge">Logistics / Boat Operator</span></div>
+              <a href="tel:+919876543212" class="text-[12px] font-mono text-[var(--muted)] flex items-center gap-1.5"><i class="fa-solid fa-phone text-[var(--teal)]"></i>+91 98765 43212</a>
+            </div>
+            <div class="member-row">
+              <div class="avatar-circle w-10 h-10 text-[12.5px]" style="background:rgba(47,217,184,0.16); color:var(--teal);">SR</div>
+              <div class="flex-1"><p class="text-[13px] font-semibold leading-snug">Sneha Reddy</p><span class="role-badge">Communications Handler</span></div>
+              <a href="tel:+919876543213" class="text-[12px] font-mono text-[var(--muted)] flex items-center gap-1.5"><i class="fa-solid fa-phone text-[var(--teal)]"></i>+91 98765 43213</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== D. APP SETTINGS VIEW ===== -->
+      <section id="view-settings" class="view-panel hidden max-w-2xl">
+        <div class="info-card mb-5">
+          <h3 class="font-display font-700 text-[14.5px] mb-1">🌗 Theme Customizer</h3>
+          <p class="text-[11.5px] text-[var(--muted)] mb-4">Flip the entire command console between dark-slate and light-gray presentation modes.</p>
+          <div class="flex flex-col min-[400px]:flex-row gap-3">
+            <div id="theme-dark-opt" class="theme-option active" onclick="setTheme('dark')">
+              <i class="fa-solid fa-moon text-[18px] mb-2"></i>
+              <p class="text-[12.5px] font-semibold">Dark Slate</p>
+            </div>
+            <div id="theme-light-opt" class="theme-option" onclick="setTheme('light')">
+              <i class="fa-solid fa-sun text-[18px] mb-2"></i>
+              <p class="text-[12.5px] font-semibold">Light Gray</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3 class="font-display font-700 text-[14.5px] mb-1">🌐 Multilingual Engine</h3>
+          <p class="text-[11.5px] text-[var(--muted)] mb-4">Select the operator console language.</p>
+          <select id="languageSelect" class="lang-select" onchange="handleLanguageChange(this.value)">
+            <option value="English">English</option>
+            <option value="Hindi">हिंदी (Hindi)</option>
+            <option value="Bengali">বাংলা (Bengali)</option>
+            <option value="Marathi">मराठी (Marathi)</option>
+            <option value="Telugu">తెలుగు (Telugu)</option>
+            <option value="Tamil">தமிழ் (Tamil)</option>
+            <option value="Gujarati">ગુજરાતી (Gujarati)</option>
+            <option value="Urdu">اردو (Urdu)</option>
+            <option value="Kannada">ಕನ್ನಡ (Kannada)</option>
+            <option value="Odia">ଓଡ଼ିଆ (Odia)</option>
+            <option value="Malayalam">മലയാളം (Malayalam)</option>
+            <option value="Punjabi">ਪੰਜਾਬੀ (Punjabi)</option>
+            <option value="Assamese">অসমীয়া (Assamese)</option>
+            <option value="Maithili">मैथिली (Maithili)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- ===== E. HELP / SUPPORT VIEW ===== -->
+      <section id="view-help" class="view-panel hidden max-w-2xl">
+        <div class="info-card mb-5">
+          <h3 class="font-display font-700 text-[15px] mb-4">❓ How the MealSahara Network Works</h3>
+          <div class="flex flex-col gap-4">
+            <div class="step-row">
+              <div class="step-num">1</div>
+              <p class="text-[13px] leading-relaxed pt-1">Victim broadcasts coordinate log via browser GPS.</p>
+            </div>
+            <div class="step-row">
+              <div class="step-num">2</div>
+              <p class="text-[13px] leading-relaxed pt-1">Real-time syncing alerts nearest NGO hub.</p>
+            </div>
+            <div class="step-row">
+              <div class="step-num">3</div>
+              <p class="text-[13px] leading-relaxed pt-1">Team leader inputs authorization token to lock routing paths.</p>
+            </div>
+          </div>
+        </div>
+
+        <a href="https://mealsahara-docs.org" target="_blank" rel="noopener noreferrer" class="manual-btn">
+          📖 CLICK HERE TO READ COMPLETE MEALSAHARA OPERATIONAL MANUAL
+        </a>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOAST NOTIFICATION LAYER
+     ============================================================ -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- ============================================================
+     POPUP MAP RADAR + AUTOMATED DISPATCH MODAL
+     ============================================================ -->
+<div id="map-modal" class="modal-backdrop hidden fixed inset-0 z-[999] items-center justify-center p-4">
+  <div class="modal-card bg-[var(--card)] border border-[var(--line)] rounded-2xl p-6 w-full max-w-[400px] max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-[#1B2432] border border-[#2A3548] flex items-center justify-center text-[15px]">📍</div>
+        <h3 class="font-display font-700 text-[14.5px]">Live Coordinates Tracking Radar</h3>
+      </div>
+      <button onclick="closeMapModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:bg-[#1B2432] hover:text-[var(--text)] transition-colors">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Single panel: Map + mission info + automated verification + instant dispatch -->
+    <div id="modal-panel-map">
+      <div id="popupMap"></div>
+      <div id="modal-mission-chip" class="mission-chip my-4">
+        <p id="modal-mission-label" class="text-[12.5px] font-semibold mb-1">Mission: —</p>
+        <p id="modal-mission-coords" class="font-mono text-[11px] text-[var(--muted)]">—</p>
+      </div>
+
+      <!-- 🎒 Extra essentials requested — full searchable-hub list so the -->
+      <!-- rescue boat knows exactly what extra gear to pack before leaving -->
+      <div id="modal-custom-items-wrap" class="mission-chip mb-4 hidden">
+        <p class="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted-2)] mb-2.5">🎒 Additional Essentials Requested</p>
+        <div id="modal-custom-items" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- Automated Verification Telemetry Engine — no manual OTP -->
+      <div class="mission-chip mb-4">
+        <p class="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted-2)] mb-2.5">🛰️ Verification Telemetry Engine</p>
+        <div class="flex flex-col gap-2">
+          <p class="telemetry-row text-[12px] flex items-start gap-2">
+            <span class="flex-shrink-0" style="color:var(--green);">✅</span>
+            <span id="modal-device-id" class="flex-1 min-w-0 break-words leading-snug">Unique Hardware Device ID Authenticated</span>
+          </p>
+          <p class="telemetry-row text-[12px] flex items-start gap-2">
+            <span class="flex-shrink-0" style="color:var(--green);">✅</span>
+            <span class="flex-1 min-w-0 break-words leading-snug">Auto GPS Geo-Fence Match (User inside critical flood layer)</span>
+          </p>
+          <p id="modal-voice-row" class="telemetry-row text-[12px] flex items-start gap-2" onclick="playVoiceToken()">
+            <span class="flex-shrink-0">🔊</span>
+            <span id="modal-voice-label" class="flex-1 min-w-0 break-words leading-snug">Voice Token Attached [Click to play audio sample]</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col min-[420px]:flex-row gap-2">
+        <button id="modal-dispatch-btn" onclick="dispatchNow()" class="flex-1 bg-[var(--blue)] hover:brightness-110 text-white text-[12.5px] font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+          🚚 INITIATE DISPATCH
+        </button>
+        <button id="modal-deliver-btn" onclick="markDelivered()" class="flex-1 bg-[var(--green)] hover:brightness-110 text-[#06210f] text-[12.5px] font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+          🏁 MARK AS DELIVERED
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MealSahara Command — modular SPA-style admin ecosystem
+   ========================================================= */
+
+const CENTER = [26.8467, 80.9462];
+const LOGIN_KEY = '9999'; // demo operator login key (dashboard access only)
+
+const requests = {};
+let pendingDispatchId = null;
+let popupMap = null;
+let popupMarker = null;
+let popupMapInitialized = false;
+
+/* =========================================================
+   NGO Analytics Logistics Sliders — live base camp asset
+   reserves, drained incrementally each time a mission is
+   marked as delivered/fulfilled.
+   ========================================================= */
+const assetLevels = { rations: 100, medical: 100, rafts: 100 };
+
+function paintAssetSliders(){
+  [['rations', 'asset-rations'], ['medical', 'asset-medical'], ['rafts', 'asset-rafts']].forEach(([key, prefix]) => {
+    const pct = Math.max(0, Math.min(100, assetLevels[key]));
+    const fill = document.getElementById(`${prefix}-fill`);
+    const label = document.getElementById(`${prefix}-pct`);
+    if (fill) { fill.style.width = pct + '%'; fill.classList.toggle('asset-low', pct < 20); }
+    if (label) { label.textContent = pct + '%'; label.style.color = pct < 20 ? 'var(--red)' : ''; }
+  });
+}
+
+function depleteAssetsOnDelivery(entry){
+  // Critical medical missions draw down Medical Units + Rations;
+  // standard supply missions draw down Rations + Evacuation Rafts.
+  const keys = entry && entry.type === 'critical' ? ['medical', 'rations'] : ['rations', 'rafts'];
+  keys.forEach((key, i) => {
+    setTimeout(() => {
+      assetLevels[key] = Math.max(0, assetLevels[key] - 5);
+      paintAssetSliders();
+    }, i * 240); // staggered animation loop for visible, sequential drawdown
+  });
+}
+paintAssetSliders();
+
+/* =========================================================
+   1. AUTH GATEWAY
+   ========================================================= */
+function switchAuthTab(tab){
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('panel-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('panel-signup').classList.toggle('hidden', tab !== 'signup');
+}
+
+function enterDashboard(){
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('dashboardShell').classList.remove('hidden');
+}
+
+function handleLogin(){
+  const val = document.getElementById('login-password').value.trim();
+  const err = document.getElementById('login-error');
+  if (val === LOGIN_KEY) { err.classList.add('hidden'); enterDashboard(); }
+  else err.classList.remove('hidden');
+}
+
+function handleSignup(){
+  const name = document.getElementById('signup-name').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
+  const location = document.getElementById('signup-location').value.trim();
+  const err = document.getElementById('signup-error');
+  if (!name || !phone || !location) { err.classList.remove('hidden'); return; }
+  err.classList.add('hidden');
+  enterDashboard();
+}
+
+document.getElementById('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+/* =========================================================
+   2 & 3. SIDEBAR NAV + DYNAMIC WORKSPACE VIEW SWITCHING
+   ========================================================= */
+const bannerText = {
+  stream:   { title: '🚨 Live Flood Crisis Dispatch Streams', sub: 'Central operator feed — sector-wide citizen broadcast layer' },
+  profile:  { title: '👤 Your Profile', sub: 'Officer identity, deployment record & field performance' },
+  team:     { title: '👥 Your Team', sub: 'Deployment roster & on-field team overview' },
+  settings: { title: '⚙️ App Settings', sub: 'Console appearance & language configuration' },
+  help:     { title: '❓ Help / Support', sub: 'How the MealSahara relief network operates' }
+};
+
+function handleNavClick(el){
+  document.querySelectorAll('.nav-icon-link').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  switchView(el.getAttribute('data-view'));
+}
+
+function switchView(name){
+  document.querySelectorAll('.view-panel').forEach(v => v.classList.add('hidden'));
+  document.getElementById('view-' + name).classList.remove('hidden');
+  document.getElementById('banner-title').textContent = bannerText[name].title;
+  document.getElementById('banner-subtitle').textContent = bannerText[name].sub;
+}
+
+/* =========================================================
+   A. SOS CARD STREAM
+   ========================================================= */
+requests[104] = { type: 'critical', latlng: [26.8510, 80.9490], requirementText: 'Urgent Medical Aid &amp; Boat Evacuation', label: 'Critical Medical Evacuation', status: 'pending', deviceId: 'DEV_1732530104881', voice: null, battery: 9 };
+requests[103] = { type: 'standard', latlng: [26.8420, 80.9420], requirementText: 'Rations &amp; Drinking Water', label: 'Food &amp; Water Supply Drop', status: 'pending', deviceId: 'DEV_1732530103224', voice: null, battery: 68 };
+
+function updateSignalBadge(){
+  const pending = Object.values(requests).filter(r => r.status === 'pending').length;
+  document.getElementById('signal-badge').textContent = `${pending} Active Signals`;
+}
+
+// Long citizen request ids (e.g. SOS_1732530123456) overflow narrow cards,
+// so the card shows only the last 6 characters; full id stays in the tooltip.
+function shortId(id){
+  const s = String(id);
+  return s.length > 10 ? s.slice(-6) : s;
+}
+
+function renderCard(id){
+  const entry = requests[id];
+  const medical = entry.type === 'critical';
+  const deployed = entry.status === 'enroute';
+  // Tags mirror exactly what the citizen selected (Food / Water / Medical, any combination).
+  // Seeded demo cards without a `needs` object keep the old fallback.
+  let tagHtml;
+  if (entry.needs) {
+    tagHtml = '';
+    if (entry.needs.food)    tagHtml += `<span class="tag tag-food">📦 Food</span>`;
+    if (entry.needs.water)   tagHtml += `<span class="tag tag-water">💧 Water</span>`;
+    if (entry.needs.medical) tagHtml += `<span class="tag tag-medical">💊 Medical</span>`;
+  } else {
+    tagHtml = medical ? `<span class="tag tag-medical">Medical</span>` : `<span class="tag tag-food">Food</span><span class="tag tag-water">Water</span>`;
+  }
+
+  // 🎒 Extra essentials the citizen tapped in the search hub — shown as
+  // their own row of tags right below the standard Food/Water/Medical set.
+  const customItems = Array.isArray(entry.customItems) ? entry.customItems : [];
+  const customTagsHtml = customItems.length
+    ? customItems.map(item => `<span class="tag tag-custom">${item}</span>`).join('')
+    : '';
+
+  // Battery Telemetry Integration — map the citizen device's simulated
+  // battery level onto the sidebar card, next to the coordinate string.
+  const hasBattery = typeof entry.battery === 'number';
+  const batteryCritical = hasBattery && entry.battery < 15;
+  const batteryChipHtml = hasBattery
+    ? `<span class="battery-chip ${batteryCritical ? 'low' : ''}">🔋 ${entry.battery}%</span>`
+    : '';
+  const batteryBadgeHtml = batteryCritical
+    ? `<div class="battery-critical-badge mb-3">⚠️ CRITICAL: Device Battery &lt; 15% - Prioritize Route!</div>`
+    : '';
+
+  const cardHtml = `
+    <div id="sos-card-${id}" class="sos-card ${deployed ? 'deployed' : (medical ? 'critical' : 'standard')}">
+      <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+        <div class="flex items-center gap-2 min-w-0">
+          ${medical && !deployed ? '<span class="flash-dot"></span>' : ''}
+          <p class="text-[13px] font-bold" style="color:${deployed ? 'var(--green)' : (medical ? 'var(--red)' : 'var(--amber)')};">
+            ${medical ? 'CRITICAL: Medical Alert' : 'STANDARD: Supply Demand'}
+          </p>
+        </div>
+        <span class="text-[10.5px] font-mono text-[var(--muted-2)] flex-shrink-0" title="${id}">#${shortId(id)}</span>
+      </div>
+      <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+        <p class="font-mono text-[11.5px] text-[var(--muted)]">${entry.latlng[0].toFixed(4)}° N, ${entry.latlng[1].toFixed(4)}° E</p>
+        ${batteryChipHtml}
+      </div>
+      ${batteryBadgeHtml}
+      <div class="flex flex-wrap gap-1.5 mb-3">${tagHtml}</div>
+      ${customTagsHtml ? `<div class="flex flex-wrap gap-1.5 mb-3">${customTagsHtml}</div>` : ''}
+      <div id="sos-card-status-${id}" class="mb-3 status-pill ${deployed ? 'deployed' : 'pending'}">
+        ${deployed ? '<i class="fa-solid fa-circle-check"></i> Active Deployment' : '<i class="fa-solid fa-triangle-exclamation"></i> Awaiting Dispatch'}
+      </div>
+      <button id="card-btn-${id}" class="map-icon-btn" onclick="openMapModal('${id}')">
+        ${deployed ? '🏁 Track &amp; Mark Delivered' : '🌐 View Location Map'}
+      </button>
+    </div>`;
+
+  const existing = document.getElementById(`sos-card-${id}`);
+  if (existing) existing.outerHTML = cardHtml;
+  else document.getElementById('sosLogContainer').insertAdjacentHTML('afterbegin', cardHtml);
+
+  updateSignalBadge();
+}
+[104, 103].forEach(renderCard);
+
+/* =========================================================
+   Popup map radar + automated dispatch
+   ========================================================= */
+function radarIcon(type){
+  const cls = type === 'critical' ? 'critical' : (type === 'fulfilled' ? 'fulfilled' : 'standard');
+  const icon = type === 'critical' ? 'fa-triangle-exclamation' : (type === 'fulfilled' ? 'fa-check' : 'fa-box');
+  return L.divIcon({
+    className: '',
+    html: `<div class="radar-pin ${cls}"><div class="ring"></div><div class="core"><i class="fa-solid ${icon}"></i></div></div>`,
+    iconSize: [34, 34], iconAnchor: [17, 30], popupAnchor: [0, -26]
+  });
+}
+
+function openMapModal(id){
+  const entry = requests[id];
+  if (!entry || entry.status === 'fulfilled') return;
+  pendingDispatchId = id;
+
+  const label = entry.label;
+  const coordsText = `📍 ${entry.latlng[0].toFixed(4)}° N, ${entry.latlng[1].toFixed(4)}° E`;
+  document.getElementById('modal-mission-label').innerHTML = `Mission: ${label}<br><span class="font-normal text-[11.5px] text-[var(--muted)]">Requested: ${entry.requirementText}</span>`;
+  document.getElementById('modal-mission-coords').textContent = coordsText;
+
+  // 🎒 Full list of extra essentials tapped in the citizen's searchable hub
+  const customItemsWrap = document.getElementById('modal-custom-items-wrap');
+  const customItemsBox = document.getElementById('modal-custom-items');
+  const customItems = Array.isArray(entry.customItems) ? entry.customItems : [];
+  if (customItems.length) {
+    customItemsBox.innerHTML = customItems.map(item => `<span class="tag tag-custom">${item}</span>`).join('');
+    customItemsWrap.classList.remove('hidden');
+  } else {
+    customItemsBox.innerHTML = '';
+    customItemsWrap.classList.add('hidden');
+  }
+
+  // Automated Verification Telemetry — no manual OTP entry
+  document.getElementById('modal-device-id').textContent =
+    entry.deviceId ? `Device ${entry.deviceId} Authenticated` : 'Unique Hardware Device ID Authenticated';
+  const voiceRow = document.getElementById('modal-voice-row');
+  const voiceLabel = document.getElementById('modal-voice-label');
+  if (entry.voice) {
+    voiceRow.classList.add('playable');
+    voiceRow.style.opacity = '1';
+    voiceRow.style.cursor = 'pointer';
+    voiceLabel.textContent = 'Voice Token Attached [Click to play audio sample]';
+  } else {
+    voiceRow.classList.remove('playable');
+    voiceRow.style.opacity = '0.45';
+    voiceRow.style.cursor = 'default';
+    voiceLabel.textContent = 'No voice token attached to this signal';
+  }
+
+  const dispatchBtn = document.getElementById('modal-dispatch-btn');
+  if (entry.status === 'enroute') {
+    dispatchBtn.disabled = true;
+    dispatchBtn.classList.add('opacity-40', 'cursor-not-allowed');
+    dispatchBtn.textContent = '✅ Already Dispatched';
+  } else {
+    dispatchBtn.disabled = false;
+    dispatchBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+    dispatchBtn.innerHTML = '🚚 INITIATE DISPATCH';
+  }
+
+  openModal('map-modal');
+
+  setTimeout(() => {
+    if (!popupMapInitialized) {
+      popupMap = L.map('popupMap', { zoomControl: true, attributionControl: false, dragging: true, scrollWheelZoom: false }).setView(entry.latlng, 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(popupMap);
+      popupMapInitialized = true;
+    } else {
+      popupMap.invalidateSize();
+      popupMap.setView(entry.latlng, 15);
+    }
+    if (popupMarker) popupMap.removeLayer(popupMarker);
+    popupMarker = L.marker(entry.latlng, { icon: radarIcon(entry.type) }).addTo(popupMap);
+    popupMarker.bindPopup(`<b>${entry.type === 'critical' ? '⚠️ Critical SOS' : '📦 Supply Request'} #${id}</b><br>${entry.requirementText}${(entry.customItems && entry.customItems.length) ? `<br><span style="opacity:.8;">+ ${entry.customItems.length} extra item(s)</span>` : ''}`).openPopup();
+  }, 60);
+}
+
+function closeMapModal(){ closeModal('map-modal'); pendingDispatchId = null; }
+
+function playVoiceToken(){
+  const entry = requests[pendingDispatchId];
+  if (!entry || !entry.voice) {
+    showToast('No voice sample attached to this signal.', 'info');
+    return;
+  }
+  const audio = new Audio(entry.voice);
+  audio.play().catch(() => showToast('Could not play voice sample.', 'info'));
+}
+
+function dispatchNow(){
+  // Zero-friction dispatch — hardware ID + GPS geo-fence are already
+  // auto-verified above, so one click clears the mission instantly.
+  const id = pendingDispatchId;
+  closeMapModal();
+  completeDispatch(id);
+}
+
+function completeDispatch(id){
+  const entry = requests[id];
+  if (!entry || entry.status !== 'pending') return;
+  entry.status = 'enroute';
+  renderCard(id);
+
+  // Push 'dispatched' onto the shared channel so the citizen's device
+  // instantly illuminates Step 2 of its live progress stepper.
+  try {
+    localStorage.setItem('activeRequestState', 'dispatched');
+  } catch (e) {
+    console.warn('Could not write activeRequestState to localStorage:', e);
+  }
+
+  showToast('🚀 Mission Authorized! Rescue Fleet Dispatched.', 'success');
+}
+
+/* =========================================================
+   Mark as Delivered / Fulfilled — closes the loop with the
+   Active Request Lock on citizen.html.
+   ========================================================= */
+function markDelivered(){
+  const id = pendingDispatchId;
+  const entry = requests[id];
+  if (!entry || entry.status === 'fulfilled') return;
+
+  entry.status = 'fulfilled';
+
+  // Turn this mission's map marker into a solid green success check.
+  if (popupMarker) {
+    popupMarker.setIcon(radarIcon('fulfilled'));
+    popupMarker.closePopup();
+  }
+
+  // Drain the corresponding base camp asset reserves by 5% each,
+  // animating in a staggered loop across the logistics sliders.
+  depleteAssetsOnDelivery(entry);
+
+  // Step 3 ("Assets Fulfilled") — briefly illuminate the final stage
+  // on the citizen's device before fully unlocking it.
+  try {
+    localStorage.setItem('activeRequestState', 'fulfilled');
+  } catch (e) {
+    console.warn('Could not write activeRequestState to localStorage:', e);
+  }
+
+  showToast('🏁 Mission Fulfilled! Citizen device unlocked for new requests.', 'success');
+
+  setTimeout(() => {
+    closeMapModal();
+    fadeOutAndRemoveCard(id);
+  }, 650);
+
+  // Fully unlock citizen.html on the victim's device — clearing these
+  // keys fires the 'storage' event in their tab, instantly re-enabling
+  // their broadcast button with no reload needed. Delayed so the
+  // "Assets Fulfilled" step is visible before the stepper disappears.
+  setTimeout(() => {
+    try {
+      localStorage.removeItem('activeRequestState');
+      localStorage.removeItem('latestCitizenRequest');
+    } catch (e) {
+      console.warn('Could not clear citizen lock state:', e);
+    }
+  }, 2200);
+}
+
+function fadeOutAndRemoveCard(id){
+  const card = document.getElementById(`sos-card-${id}`);
+  if (card) {
+    card.style.transition = 'opacity .4s ease, transform .4s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.94)';
+    setTimeout(() => {
+      card.remove();
+      delete requests[id];
+      updateSignalBadge();
+    }, 420);
+  } else {
+    delete requests[id];
+    updateSignalBadge();
+  }
+}
+
+/* =========================================================
+   Toast notifications
+   ========================================================= */
+function showToast(message, variant){
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast-card ${variant === 'info' ? 'info' : ''}`;
+  toast.innerHTML = `<p class="text-[12.5px] leading-snug font-medium">${message}</p>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.classList.add('leaving'); setTimeout(() => toast.remove(), 250); }, 3500);
+}
+
+/* =========================================================
+   LocalStorage sync — citizen.html broadcast channel
+   ========================================================= */
+function startCitizenSyncLoop(){
+  // Primary channel: instant, no polling — fires the moment citizen.html
+  // broadcasts, as long as both pages are open on the SAME origin.
+  try {
+    if ('BroadcastChannel' in window) {
+      const sosChannel = new BroadcastChannel('mealsahara_sos');
+      sosChannel.onmessage = (e) => {
+        const req = e.data;
+        if (req && req.id && !requests[req.id]) ingestCitizenRequest(req);
+      };
+    }
+  } catch (e) { console.warn('BroadcastChannel unavailable:', e); }
+
+  // Fallback: the native 'storage' event fires in this tab the instant
+  // another same-origin tab writes to localStorage — also no polling.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== 'latestCitizenRequest' || !e.newValue) return;
+    try {
+      const req = JSON.parse(e.newValue);
+      if (req && req.id && !requests[req.id]) ingestCitizenRequest(req);
+    } catch (err) {}
+  });
+
+  // Catch-up: pick up a request that was already sitting there before
+  // this NGO tab was opened.
+  try {
+    const raw = localStorage.getItem('latestCitizenRequest');
+    if (raw) {
+      const req = JSON.parse(raw);
+      if (req && req.id && !requests[req.id]) ingestCitizenRequest(req);
+    }
+  } catch (e) {}
+}
+
+function ingestCitizenRequest(req){
+  const needs = req.needs || {};
+  const medical = !!needs.medical;
+  const type = medical ? 'critical' : 'standard';
+  const lat = typeof req.lat === 'number' ? req.lat : CENTER[0];
+  const lng = typeof req.lng === 'number' ? req.lng : CENTER[1];
+  const parts = [];
+  if (needs.food) parts.push('Food');
+  if (needs.water) parts.push('Water');
+  if (needs.medical) parts.push('Urgent Medical Aid');
+  const requirementText = parts.length ? parts.join(' &amp; ') : 'General Relief Supplies';
+  const label = medical ? 'Critical Medical Evacuation' : 'Food &amp; Water Supply Drop';
+  requests[req.id] = {
+    type, latlng: [lat, lng], requirementText, label, status: 'pending',
+    needs: { food: needs.food ? 1 : 0, water: needs.water ? 1 : 0, medical: needs.medical ? 1 : 0 },
+    deviceId: req.deviceId || null,
+    voice: req.voice || null,
+    battery: typeof req.battery === 'number' ? req.battery : null,
+    customItems: Array.isArray(req.selectedCustomItems) ? req.selectedCustomItems.slice() : (Array.isArray(needs.customItems) ? needs.customItems.slice() : [])
+  };
+  renderCard(req.id);
+}
+startCitizenSyncLoop();
+
+/* =========================================================
+   D. Settings — theme customizer + language engine
+   ========================================================= */
+function setTheme(mode){
+  document.documentElement.classList.toggle('light-theme', mode === 'light');
+  document.getElementById('theme-dark-opt').classList.toggle('active', mode === 'dark');
+  document.getElementById('theme-light-opt').classList.toggle('active', mode === 'light');
+  setTimeout(() => { if (popupMap) popupMap.invalidateSize(); }, 60);
+}
+
+function handleLanguageChange(lang){
+  showToast('Language configuration updated successfully!', 'info');
+}
+
+/* =========================================================
+   Live clock
+   ========================================================= */
+function updateClock(){
+  const el = document.getElementById('live-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* =========================================================
+   Modal helpers
+   ========================================================= */
+function openModal(id){ const modal = document.getElementById(id); modal.classList.remove('hidden'); modal.classList.add('flex'); }
+function closeModal(id){ const modal = document.getElementById(id); modal.classList.add('hidden'); modal.classList.remove('flex'); }
+document.querySelectorAll('.modal-backdrop').forEach(m => { m.addEventListener('click', (e) => { if (e.target === m) closeModal(m.id); }); });
+</script>
+
+</body>
+</html>
